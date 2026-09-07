@@ -39,7 +39,7 @@
 
 ### 5. 🔐 મજબૂત સુરક્ષા & કાયમી લૉગિન (Permanent Session Persistence like WhatsApp / Instagram)
 - **WhatsApp/Instagram જેવું કાયમી લૉગિન**: `FileSystem` આધારિત પર્સિસ્ટન્ટ ફાઈલ સ્ટોરેજ (`appStorage.ts`) વડે એપ બેકગ્રાઉન્ડમાંથી સ્વાઈપ કરો કે ફોન રીસ્ટાર્ટ કરો—લૉગિન ક્યારેય જતું નથી. માત્ર જાતે "Logout" દબાવવાથી જ લૉગઆઉટ થાય છે.
-- **6-Digit Email OTP Password Reset**: ઇમેઇલ પર ૬-અંકનો સત્તાવાર OTP મેળવીને પાસવર્ડ રીસેટ કરવાની સુરક્ષિત પદ્ધતિ.
+- **8-Digit Email OTP Password Reset**: ઇમેઇલ પર ૮-અંકનો સત્તાવાર OTP મેળવીને પાસવર્ડ રીસેટ કરવાની સુરક્ષિત પદ્ધતિ.
 - **Live Password Strength Indicator**: મજબૂત પાસવર્ડ બનાવવા માટે ૪ નિયમો સાથેનું લાઈવ ઈન્ડિકેટર.
 - **⚠️ Danger Zone (Delete Family & Account)**: Google Play Store & Apple App Store ની ગાઇડલાઇન મુજબ ફેમિલી હેડ માટે ડબલ કન્ફર્મેશન (`DELETE`) સાથે કાયમી એકાઉન્ટ અને ડેટા ડિલીટ કરવાનો વિકલ્પ.
 
