@@ -120,9 +120,27 @@ export default function SignupScreen() {
           <Text style={[styles.title, { color: theme.text }]}>
             અમદાવાદ ડબગર સમાજ પરિવાર રજીસ્ટ્રેશન
           </Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            પરિવાર વડા તરીકે નવું ખાતું બનાવો
-          </Text>
+          <View
+            style={[
+              styles.headNoticeCard,
+              {
+                backgroundColor: theme.primary + '12',
+                borderColor: theme.primary + '40',
+              },
+            ]}
+          >
+            <View style={styles.headNoticeHeader}>
+              <View style={[styles.headNoticeIconCircle, { backgroundColor: theme.primary + '22' }]}>
+                <Ionicons name="person" size={15} color={theme.primary} />
+              </View>
+              <Text style={[styles.headNoticeTitle, { color: theme.primary }]}>
+                માત્ર પરિવારના મુખ્ય વડીલ (Family Head) માટે
+              </Text>
+            </View>
+            <Text style={[styles.headNoticeDesc, { color: theme.textSecondary }]}>
+              રજીસ્ટ્રેશન ફક્ત પરિવારના મુખ્ય વડીલના મોબાઈલ/ઈમેઈલથી જ કરવું. પરિવારના અન્ય સભ્યોને ખાતું બન્યા પછી અંદરથી સરળતાથી ઉમેરી શકાશે.
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -337,6 +355,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     textAlign: 'center',
+  },
+  headNoticeCard: {
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  headNoticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  headNoticeIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headNoticeTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  headNoticeDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   formCard: {
     padding: 20,

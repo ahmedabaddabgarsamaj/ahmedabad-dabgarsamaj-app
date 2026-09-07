@@ -44,11 +44,12 @@ export function matchesMemberQuery(m: FamilyMember, query: string): boolean {
   if (m.relation && m.relation.toLowerCase().includes(q)) return true;
   if (m.display_relation && m.display_relation.toLowerCase().includes(q)) return true;
 
-  // 5. Education (level, course/standard, institution, status)
+  // 5. Education (level, course/standard, current_year, institution, status)
   if (m.education_status && m.education_status.toLowerCase().includes(q)) return true;
   if (m.educationRecord) {
     const edu = m.educationRecord;
     if (edu.course_or_standard && edu.course_or_standard.toLowerCase().includes(q)) return true;
+    if (edu.current_year && edu.current_year.toLowerCase().includes(q)) return true;
     if (edu.education_level && edu.education_level.toLowerCase().includes(q)) return true;
     if (edu.institution && edu.institution.toLowerCase().includes(q)) return true;
     if (edu.education_status && edu.education_status.toLowerCase().includes(q)) return true;
@@ -100,7 +101,11 @@ export function getMemberMatchHighlight(m: FamilyMember, query: string): string 
   }
 
   if (m.educationRecord?.course_or_standard && m.educationRecord.course_or_standard.toLowerCase().includes(q)) {
-    return `🎓 ${m.educationRecord.course_or_standard}`;
+    const yr = m.educationRecord?.current_year ? ` (${m.educationRecord.current_year})` : '';
+    return `🎓 ${m.educationRecord.course_or_standard}${yr}`;
+  }
+  if (m.educationRecord?.current_year && m.educationRecord.current_year.toLowerCase().includes(q)) {
+    return `🎓 ${m.educationRecord.course_or_standard || 'અભ્યાસ'} (${m.educationRecord.current_year})`;
   }
   if (m.education_status && m.education_status.toLowerCase().includes(q)) {
     return `🎓 ${m.education_status}`;
@@ -221,7 +226,9 @@ export const directoryService = {
             age: calculateAge(m.dob, isDeceased ? deceasedDate : null),
             dob: formatDate(m.dob),
             display_relation: getRelationshipDisplay(m.relation),
-            education_status: edu?.course_or_standard || m.education_status,
+            education_status: edu?.course_or_standard
+              ? (edu.current_year ? `${edu.course_or_standard} (${edu.current_year})` : edu.course_or_standard)
+              : (m.education_status ? (edu?.current_year ? `${m.education_status} (${edu.current_year})` : m.education_status) : null),
             occupation_type: occ?.occupation_type || m.occupation_type,
             occupation_details: occ?.details || m.occupation_details || {},
             educationRecord: edu || null,

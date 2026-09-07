@@ -1,4 +1,14 @@
-import React, { useState } from 'react';
+import { EditFamilyAddressModal } from '@/components/family/EditFamilyAddressModal';
+import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useTheme } from '@/constants/theme';
+import { formatAgeShort } from '@/lib/utils/date';
+import { exportFamilyIdCardAsPdf } from '@/lib/utils/exportPdf';
+import { Family, FamilyMember } from '@/types/database';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -7,17 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/constants/theme';
-import { Family, FamilyMember } from '@/types/database';
-import { EditFamilyAddressModal } from '@/components/family/EditFamilyAddressModal';
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { formatAgeShort, formatDate } from '@/lib/utils/date';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { exportFamilyIdCardAsPdf } from '@/lib/utils/exportPdf';
-import { Ionicons } from '@expo/vector-icons';
 
 export interface CardTabViewProps {
   family: Family | null;
@@ -304,8 +303,8 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
           </Text>
           <Text style={[styles.instructionsText, { color: theme.textSecondary }]}>
             • "Download / Print ID Card" પર ક્લિક કરીને કાર્ડને પ્રિન્ટ કરી લેમિનેટ કરાવી શકાય છે.{'\n'}
-            • QR કોડ દ્વારા સમાજ પંચ અથવા કોઈ પણ સભ્ય તમારા પરિવારની સત્તાવાર ચકાસણી તરત જ કરી શકે છે.{'\n'}
-            • કોઈ પણ જરૂરિયાતમાં આ કાર્ડ ઓળખના સત્તાવાર પુરાવા તરીકે માન્ય છે.
+            • QR કોડ દ્વારા આપણાં સમાજનાં કોઈ પણ સભ્ય તમારા પરિવારની વિગત તુરંત જ મેળવી શકશે.{'\n'}
+            • આ કાર્ડ આપણાં સમાજ માં આપણી ઓળખ તરીકે માન્ય રહેશે.
           </Text>
         </View>
       </View>

@@ -86,6 +86,15 @@ export default function LoginScreen() {
             Sign In / પ્રવેશ
           </Text>
 
+          {/* Member Login Guidance Note */}
+          <View style={[styles.infoTipBox, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}>
+            <Ionicons name="information-circle-outline" size={19} color={theme.primary} style={{ marginTop: 1 }} />
+            <Text style={[styles.infoTipText, { color: theme.textSecondary }]}>
+              <Text style={{ fontWeight: '700', color: theme.primary }}>સભ્યો માટે નોંધ: </Text>
+              પરિવારના કોઈપણ સભ્ય પોતાના નોંધાયેલ મોબાઈલ નંબર અને પરિવારના વડાના પાસવર્ડ વડે પણ સરળતાથી લોગીન કરી શકે છે.
+            </Text>
+          </View>
+
           {errorMessage ? (
             <View style={[styles.errorBanner, { backgroundColor: theme.errorLight, borderColor: theme.error }]}>
               <Text style={[styles.errorBannerText, { color: theme.error }]}>
@@ -204,7 +213,21 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  infoTipBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 18,
+  },
+  infoTipText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
   },
   errorBanner: {
     borderWidth: 1,

@@ -25,7 +25,10 @@ function formatPdfEducation(m: FamilyMember): string {
   const fallback = m.education_status && m.education_status !== 'Completed' && m.education_status !== 'Studying'
     ? m.education_status
     : '';
-  const mainCourse = course || fallback || m.education_status || '-';
+  let mainCourse = course || fallback || m.education_status || '-';
+  if (edu.current_year && mainCourse !== '-') {
+    mainCourse = `${mainCourse} (${edu.current_year})`;
+  }
   const inst = edu.institution ? `<div style="color:#64748B; font-size:7.5px; line-height:1.15; margin-top:1px;">🏫 ${edu.institution}</div>` : '';
   const year = edu.passing_year ? `<div style="color:#64748B; font-size:7.5px; line-height:1.15;">📅 પાસિંગ: ${edu.passing_year}</div>` : '';
   return `<span style="font-weight:600; font-size:8.5px;">${mainCourse}</span>${inst}${year}`;
@@ -127,6 +130,10 @@ export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyI
           <td style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px;">${eduStr}</td>
           <td style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px;">${occStr}</td>
           <td style="padding: 3px 4px; border: 1px solid #CBD5E1; text-align: center; font-size: 8.5px;">${contactStr}</td>
+          <td style="padding: 2px 3px; border: 1px solid #CBD5E1; text-align: center; font-size: 7.5px; white-space: nowrap;">
+            ${m.photo_url ? `<a href="${m.photo_url}" target="_blank" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; padding:1px 3px; border-radius:3px; font-size:7px; font-weight:700; text-decoration:none; display:inline-block; margin-bottom:2px; white-space:nowrap;">📷 ફોટો</a><br/>` : ''}
+            <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${family.family_code}" target="_blank" style="color:#15803D; background:#F0FDF4; border:1px solid #BBF7D0; padding:1px 3px; border-radius:3px; font-size:7px; font-weight:700; text-decoration:none; display:inline-block; white-space:nowrap;">💳 કાર્ડ</a>
+          </td>
         </tr>
       `;
     })
@@ -222,7 +229,11 @@ export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyI
 
         <div class="family-summary">
           <div class="info-col">
-            <div><strong>પરિવાર કોડ / Code:</strong> <span style="color:#0F172A; font-weight:800; font-size:11px; background:#FFFFFF; border:1px solid #64748B; padding:1px 5px; border-radius:3px; margin-left:4px;">${family.family_code}</span></div>
+            <div>
+              <strong>પરિવાર કોડ / Code:</strong> 
+              <span style="color:#0F172A; font-weight:800; font-size:11px; background:#FFFFFF; border:1px solid #64748B; padding:1px 5px; border-radius:3px; margin-left:4px;">${family.family_code}</span>
+              <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${family.family_code}" target="_blank" style="color:#0284C7; background:#FFFFFF; border:1px solid #0284C7; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; text-decoration:none; margin-left:6px; display:inline-block;">💳 ડિજિટલ સ્માર્ટ કાર્ડ ↗</a>
+            </div>
             <div style="margin-top:3px;"><strong>પરિવાર વડા / Head:</strong> <strong style="color:#0F172A; font-size:12px; font-weight:800;">${head?.name || '-'}</strong></div>
             <div style="margin-top:2px;"><strong>શહેર / વતન:</strong> <span style="color:#0F172A; font-weight:600;">${(family as any).native_place || family.city || 'Ahmedabad'}</span></div>
           </div>
@@ -249,6 +260,7 @@ export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyI
               <th style="text-align: left;">શિક્ષણ</th>
               <th style="text-align: left;">વ્યવસાય / વિગત</th>
               <th style="white-space: nowrap;">મોબાઈલ</th>
+              <th style="padding: 3px 2px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap; width: 48px;">લિંક્સ</th>
             </tr>
           </thead>
           <tbody>
@@ -311,6 +323,10 @@ export function generateCommunityBookletHtml(families: ExportDirectoryFamilyItem
               <td style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px;">${eduStr}</td>
               <td style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px;">${occStr}</td>
               <td style="padding: 3px 4px; border: 1px solid #CBD5E1; text-align: center; font-size: 8.5px;">${contactStr}</td>
+              <td style="padding: 2px 3px; border: 1px solid #CBD5E1; text-align: center; font-size: 7.5px; white-space: nowrap;">
+                ${m.photo_url ? `<a href="${m.photo_url}" target="_blank" style="color:#0284C7; background:#F0F9FF; border:1px solid #BAE6FD; padding:1px 3px; border-radius:3px; font-size:7px; font-weight:700; text-decoration:none; display:inline-block; margin-bottom:2px; white-space:nowrap;">📷 ફોટો</a><br/>` : ''}
+                <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}" target="_blank" style="color:#15803D; background:#F0FDF4; border:1px solid #BBF7D0; padding:1px 3px; border-radius:3px; font-size:7px; font-weight:700; text-decoration:none; display:inline-block; white-space:nowrap;">💳 કાર્ડ</a>
+              </td>
             </tr>
           `;
         })
@@ -318,30 +334,32 @@ export function generateCommunityBookletHtml(families: ExportDirectoryFamilyItem
 
       return `
         <div style="page-break-inside: avoid; margin-bottom: 10px; border: 1.5px solid #0284C7; border-radius: 5px; overflow: hidden;">
-          <div style="background: #F1F5F9; border-bottom: 1.5px solid #0284C7; padding: 5px 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="background: #F1F5F9; border-bottom: 1.5px solid #0284C7; padding: 4px 6px; display: flex; justify-content: space-between; align-items: center; overflow: hidden;">
             <div>
-              <span style="color: #0F172A; font-size: 13px; font-weight: 800;">${fIdx + 1}. ${head?.name || fam.head_name || 'પરિવાર'}</span>
-              <span style="color: #0F172A; font-size: 10.5px; font-weight: 800; margin-left: 8px; background: #FFFFFF; border: 1px solid #64748B; padding: 1px 6px; border-radius: 4px; display: inline-block;">કોડ: ${fam.family_code}</span>
+              <span style="color: #0F172A; font-size: 12.5px; font-weight: 800;">${fIdx + 1}. ${head?.name || fam.head_name || 'પરિવાર'}</span>
+              <span style="color: #0F172A; font-size: 10px; font-weight: 800; margin-left: 6px; background: #FFFFFF; border: 1px solid #64748B; padding: 1px 5px; border-radius: 4px; display: inline-block;">કોડ: ${fam.family_code}</span>
+              <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}" target="_blank" style="color:#0284C7; background:#FFFFFF; border:1px solid #0284C7; padding:1px 5px; border-radius:3px; font-size:8.5px; font-weight:700; text-decoration:none; margin-left:5px; display:inline-block;">💳 ડિજિટલ સ્માર્ટ કાર્ડ ↗</a>
             </div>
-            <div style="font-size: 10px; color: #1E293B; font-weight: 700;">
+            <div style="font-size: 9px; color: #1E293B; font-weight: 700; white-space: nowrap; margin-left: 4px;">
               📍 ${fam.area_name || fam.city || 'Ahmedabad'} • 🏠 ${(fam as any).native_place || fam.city || 'Ahmedabad'}
             </div>
           </div>
-          <div style="padding: 3px 8px; background: #FFFFFF; font-size: 9.5px; border-bottom: 1px solid #CBD5E1; color: #0F172A;">
+          <div style="padding: 3px 6px; background: #FFFFFF; font-size: 9px; border-bottom: 1px solid #CBD5E1; color: #0F172A;">
             <strong>સરનામું:</strong> <span style="font-weight: 600; color: #0F172A;">${fam.address || '-'}</span> | <strong>સભ્યો:</strong> <span style="font-weight: 800; color: #0369A1;">${fam.members?.length || 0}</span>
           </div>
           <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
             <thead>
               <tr style="background: #F1F5F9; color: #334155;">
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; width: 20px; font-size: 8.5px;">#</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; text-align: left;">નામ</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; white-space: nowrap;">સંબંધ</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; white-space: nowrap;">જાતિ</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; white-space: nowrap;">જન્મ તારીખ</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; white-space: nowrap;">ઉંમર</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; text-align: left;">શિક્ષણ</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; text-align: left;">વ્યવસાય</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8.5px; white-space: nowrap;">મોબાઈલ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; width: 18px; font-size: 8px;">#</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; text-align: left;">નામ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">સંબંધ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">જાતિ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">જન્મ તારીખ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">ઉંમર</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; text-align: left;">શિક્ષણ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; text-align: left;">વ્યવસાય</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">મોબાઈલ</th>
+                <th style="padding: 3px 2px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap; width: 48px;">લિંક્સ</th>
               </tr>
             </thead>
             <tbody>
@@ -436,13 +454,87 @@ function printHtmlOnWeb(html: string): void {
 }
 
 /**
+ * Parse an HTML document string and extract its styles and body children into a container element
+ */
+function preparePrintableElement(html: string): HTMLElement {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const container = document.createElement('div');
+  container.className = 'pdf-export-content-wrapper';
+
+  // Append styles from head
+  const styles = doc.querySelectorAll('style');
+  styles.forEach((s) => {
+    container.appendChild(s.cloneNode(true));
+  });
+
+  // Append all children of body
+  Array.from(doc.body.childNodes).forEach((node) => {
+    container.appendChild(node.cloneNode(true));
+  });
+
+  // Ensure standard A4 layout strictly within printable width
+  container.style.width = '730px';
+  container.style.maxWidth = '730px';
+  container.style.boxSizing = 'border-box';
+  container.style.backgroundColor = '#FFFFFF';
+  container.style.color = '#1E293B';
+  container.style.padding = '0';
+  container.style.margin = '0 auto';
+  container.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+  return container;
+}
+
+/**
+ * Direct PDF Download on Web using html2pdf.js
+ * Generates an actual .pdf file and downloads it to the browser's downloads folder.
+ * Preserves active clickable hyperlinks and Gujarati/Unicode text rendering.
+ */
+async function downloadPdfOnWeb(html: string, filename: string): Promise<void> {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  try {
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default || html2pdfModule;
+
+    const element = preparePrintableElement(html);
+
+    const opt = {
+      margin: [6, 5, 6, 5],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        logging: false,
+        scrollY: 0,
+        scrollX: 0,
+        windowWidth: 730,
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      enableLinks: true,
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    };
+
+    await (html2pdf as any)().set(opt).from(element).save();
+  } catch (err) {
+    console.error('downloadPdfOnWeb failed, falling back to print:', err);
+    printHtmlOnWeb(html);
+  }
+}
+
+/**
  * Export and Share single family booklet as PDF
  */
 export async function exportFamilyAsPdf(family: Family | ExportDirectoryFamilyItem, members: FamilyMember[]): Promise<void> {
   try {
     const html = generateSingleFamilyHtml(family, members);
     if (Platform.OS === 'web') {
-      printHtmlOnWeb(html);
+      const cleanCode = (family.family_code || 'family').replace(/[^a-zA-Z0-9_-]/g, '_');
+      await downloadPdfOnWeb(html, `Ahmedabad_Dabgar_Samaj_${cleanCode}_Booklet.pdf`);
       return;
     }
 
@@ -491,7 +583,7 @@ export async function exportCommunityDirectoryAsPdf(families: ExportDirectoryFam
   try {
     const html = generateCommunityBookletHtml(families);
     if (Platform.OS === 'web') {
-      printHtmlOnWeb(html);
+      await downloadPdfOnWeb(html, `Ahmedabad_Dabgar_Samaj_Parichay_Pustika_${Date.now()}.pdf`);
       return;
     }
 
@@ -963,7 +1055,8 @@ export async function exportFamilyIdCardAsPdf(family: Family, members: FamilyMem
   try {
     const html = generateDigitalFamilyIdCardHtml(family, members);
     if (Platform.OS === 'web') {
-      printHtmlOnWeb(html);
+      const cleanCode = (family.family_code || 'id_card').replace(/[^a-zA-Z0-9_-]/g, '_');
+      await downloadPdfOnWeb(html, `Ahmedabad_Dabgar_Samaj_${cleanCode}_Card.pdf`);
       return;
     }
 

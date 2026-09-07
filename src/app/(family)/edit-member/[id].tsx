@@ -17,6 +17,7 @@ import { relationshipsService } from '@/features/tree/relationshipsService';
 import { Family, FamilyMember } from '@/types/database';
 import { RELATIONSHIPS } from '@/constants/relationships';
 import {
+  COLLEGE_YEARS,
   EDUCATION_LEVELS,
   EDUCATION_STATUSES,
   getCoursesForLevel,
@@ -76,6 +77,7 @@ export default function EditMemberScreen() {
   const [educationLevel, setEducationLevel] = useState('Undergraduate');
   const [courseOrStd, setCourseOrStd] = useState('BCA');
   const [customCourse, setCustomCourse] = useState('');
+  const [currentYear, setCurrentYear] = useState('');
   const [eduStatus, setEduStatus] = useState<'Studying' | 'Completed' | 'Discontinued'>('Studying');
   const [passingYear, setPassingYear] = useState('');
   const [institution, setInstitution] = useState('');
@@ -153,6 +155,7 @@ export default function EditMemberScreen() {
         if (memRes.education) {
           setEducationLevel(memRes.education.education_level);
           setCourseOrStd(memRes.education.course_or_standard);
+          setCurrentYear(memRes.education.current_year || '');
           setEduStatus((memRes.education.education_status as any) || 'Studying');
           setPassingYear(memRes.education.passing_year ? String(memRes.education.passing_year) : '');
           setInstitution(memRes.education.institution || '');
@@ -255,6 +258,7 @@ export default function EditMemberScreen() {
       isDeceased ? undefined : {
         education_level: educationLevel,
         course_or_standard: finalCourse,
+        current_year: currentYear || null,
         education_status: eduStatus,
         passing_year: passingYear ? parseInt(passingYear, 10) : undefined,
         institution,
@@ -663,6 +667,9 @@ export default function EditMemberScreen() {
                       setEducationLevel(lvl.value);
                       const courses = getCoursesForLevel(lvl.value);
                       setCourseOrStd(courses[0] || 'Other');
+                      if (lvl.value === 'School' || lvl.value === 'NotSchoolAge') {
+                        setCurrentYear('');
+                      }
                     }}
                     style={[
                       styles.gridChoiceItem,
@@ -710,6 +717,40 @@ export default function EditMemberScreen() {
                 value={customCourse}
                 onChangeText={setCustomCourse}
               />
+            )}
+
+            {/* Current Year Selection (Before Status) */}
+            {educationLevel !== 'School' && educationLevel !== 'NotSchoolAge' && (
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                  Year / વર્ષ (1st, 2nd, 3rd, 4th Year)
+                </Text>
+                <View style={styles.gridWrap}>
+                  {COLLEGE_YEARS.map((yr) => (
+                    <TouchableOpacity
+                      key={yr}
+                      activeOpacity={0.7}
+                      onPress={() => setCurrentYear(currentYear === yr ? '' : yr)}
+                      style={[
+                        styles.gridChoiceItem,
+                        {
+                          backgroundColor: currentYear === yr ? theme.primary : theme.backgroundElement,
+                          borderColor: currentYear === yr ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.gridChoiceText,
+                          { color: currentYear === yr ? '#FFFFFF' : theme.text },
+                        ]}
+                      >
+                        {yr}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
             )}
 
             <View style={styles.fieldGroup}>

@@ -518,7 +518,7 @@ export default function MemberDetailScreen() {
                     Course / Standard:
                   </Text>
                   <Text style={[styles.detailValue, { color: theme.text, fontWeight: '700' }]}>
-                    {education.course_or_standard}
+                    {education.course_or_standard}{education.current_year ? ` (${education.current_year})` : ''}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
@@ -529,6 +529,16 @@ export default function MemberDetailScreen() {
                     {education.education_level}
                   </Text>
                 </View>
+                {education.current_year ? (
+                  <View style={styles.detailRow}>
+                    <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                      Current Year / વર્ષ:
+                    </Text>
+                    <Text style={[styles.detailValue, { color: theme.text, fontWeight: '600' }]}>
+                      {education.current_year}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                     Status:

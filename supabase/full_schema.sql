@@ -133,6 +133,8 @@ CREATE TABLE IF NOT EXISTS public.education_records (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+COMMENT ON COLUMN public.education_records.current_year IS 'College/Degree current studying year e.g. 1st Year, 2nd Year, 3rd Year, 4th Year, 5th Year';
+
 -- 9. OCCUPATION RECORDS TABLE
 CREATE TABLE IF NOT EXISTS public.occupation_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -200,6 +202,7 @@ CREATE INDEX IF NOT EXISTS idx_family_members_email_lower ON public.family_membe
 CREATE INDEX IF NOT EXISTS idx_relationships_family ON public.family_relationships(family_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_members ON public.family_relationships(from_member_id, to_member_id);
 CREATE INDEX IF NOT EXISTS idx_education_member ON public.education_records(family_member_id);
+CREATE INDEX IF NOT EXISTS idx_education_records_current_year ON public.education_records(current_year);
 CREATE INDEX IF NOT EXISTS idx_occupation_member ON public.occupation_records(family_member_id);
 
 -- 13. ROW LEVEL SECURITY (RLS) POLICIES

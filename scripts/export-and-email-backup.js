@@ -5,20 +5,26 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// 1. Read environment variables
-const envPath = path.join(__dirname, '..', '.env');
-const envContent = fs.readFileSync(envPath, 'utf8');
+// 1. Read environment variables (from .env file if present, or process.env in CI/CD)
 const env = {};
-envContent.split('\n').forEach(line => {
-  const [k, ...v] = line.split('=');
-  if (k && v) env[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
-});
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  try {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const [k, ...v] = line.split('=');
+      if (k && v) env[k.trim()] = v.join('=').trim().replace(/^["']|["']$/g, '');
+    });
+  } catch (e) {
+    console.warn('Could not read .env file, using process.env');
+  }
+}
 
-const supabaseUrl = env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseKey = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase URL or Anon Key in .env');
+  console.error('Missing Supabase URL or Anon Key in environment variables or secrets.');
   process.exit(1);
 }
 
@@ -204,13 +210,27 @@ async function buildExcelFile() {
     return '';
   }
 
+  function makeHyperlink(url, label) {
+    if (!url || typeof url !== 'string' || !url.trim()) return '';
+    const cleanUrl = url.trim();
+    const safeLabel = label || 'લિંક ખોલો (Open Link)';
+    const escapedUrl = cleanUrl.replace(/"/g, '""');
+    const escapedLabel = safeLabel.replace(/"/g, '""');
+    return {
+      t: 's',
+      v: safeLabel,
+      f: `HYPERLINK("${escapedUrl}", "${escapedLabel}")`,
+      l: { Target: cleanUrl, Tooltip: safeLabel }
+    };
+  }
+
   // SHEET 1: સમાજ પુસ્તિકા (Booklet - Family-wise)
   const bookletRows = [[
     'પરિવાર કોડ', 'સંબંધ / હોદ્દો', 'સભ્યનું પૂરું નામ', 'જાતિ (Gender)', 'જન્મ તારીખ (DOB)', 'ઉંમર (Age)',
     'બ્લડ ગ્રુપ', 'મૂળ વતન / જન્મસ્થળ', 'મોબાઈલ નંબર', 'ઈમેલ એડ્રેસ', 'શિક્ષણ ડિગ્રી / ધોરણ', 'શાળા / કોલેજનું નામ',
     'અભ્યાસ સ્થિતિ', 'વ્યવસાય પ્રકાર', 'કંપની / પેઢીનું નામ', 'હોદ્દો / પદ', 'કામકાજનું સ્થળ', 'અનુભવ (વર્ષ)',
     'રહેઠાણ પ્રકાર', 'ઘરનું સરનામું', 'શહેર', 'પીનકોડ', 'અલગ સરનામું (જો હોય તો)', 'હયાત / સ્વર્ગસ્થ',
-    'સ્વર્ગસ્થ તારીખ', 'એડિટ પરવાનગી', 'ફોટો લિંક'
+    'સ્વર્ગસ્થ તારીખ', 'એડિટ પરવાનગી', 'સભ્યનો ફોટો (Member Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
   ]];
 
   families.forEach(fam => {
@@ -223,14 +243,16 @@ async function buildExcelFile() {
       return 0;
     });
 
+    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
+
     famMembers.forEach(m => {
       const edus = eduMap.get(m.id) || [];
       const occs = occMap.get(m.id) || [];
       const primaryEdu = edus[0] || {};
       const primaryOcc = occs[0] || {};
-
       const { occType, orgName, desig, workLoc, exp } = extractOccupationInfo(m, primaryOcc);
-      const course = primaryEdu.course_or_standard || (primaryEdu.education_level ? `${primaryEdu.education_level} - ${primaryEdu.course_or_standard || ''}` : '') || '';
+      const rawCourse = primaryEdu.course_or_standard || (primaryEdu.education_level ? `${primaryEdu.education_level} - ${primaryEdu.course_or_standard || ''}` : '') || '';
+      const course = primaryEdu.current_year && rawCourse ? `${rawCourse} (${primaryEdu.current_year})` : rawCourse;
       const inst = primaryEdu.institution || m.occupation_details?.school_or_college || '';
       const eduStat = primaryEdu.education_status || m.education_status || '';
       const memberEmail = getMemberEmail(m, fam);
@@ -247,11 +269,12 @@ async function buildExcelFile() {
         occType, orgName, desig, workLoc, exp,
         formatResidence(m.residence_type), fam.address, fam.city, fam.pincode, sepAddr,
         m.is_deceased ? 'સ્વર્ગસ્થ' : 'હયાત', m.deceased_date || '', m.can_edit_family ? 'હા (Yes)' : 'ના (No)',
-        m.photo_url || ''
+        makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
+        makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
       ]);
     });
 
-    bookletRows.push(new Array(27).fill(''));
+    bookletRows.push(new Array(28).fill(''));
   });
 
   const isDeceased = (m) => m.is_deceased === true || m.status === 'DECEASED' || m.occupation_details?.is_deceased === true;
@@ -262,7 +285,8 @@ async function buildExcelFile() {
   const familyRows = [[
     'ક્રમ (No.)', 'પરિવાર કોડ (Family Code)', 'મુખ્ય વડીલનું નામ (Head Name)', 'વડાનો મોબાઈલ (Head Mobile)',
     'વડાનું ઈમેલ (Head Email)', 'હયાત સભ્યો (Living)', 'સ્વર્ગસ્થ સભ્યો (Late)', 'કુલ સભ્યો (Total)', 'ઘરનું સરનામું (Address)', 'વિસ્તાર (Area)',
-    'શહેર (City)', 'રાજ્ય (State)', 'પીનકોડ (Pincode)', 'સ્ટેટસ (Status)', 'નોંધણી તારીખ (Registered At)'
+    'શહેર (City)', 'રાજ્ય (State)', 'પીનકોડ (Pincode)', 'સ્ટેટસ (Status)', 'નોંધણી તારીખ (Registered At)',
+    'વડાનો ફોટો (Head Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
   ]];
 
   families.forEach((fam, idx) => {
@@ -273,10 +297,13 @@ async function buildExcelFile() {
     const areaName = fam.area_id ? (areaMap.get(fam.area_id) || '') : '';
     const regDate = fam.created_at ? new Date(fam.created_at).toLocaleDateString('en-IN') : '';
     const headEmail = getMemberEmail(head, fam);
+    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
 
     familyRows.push([
       idx + 1, fam.family_code, head.name || 'N/A', head.mobile || '', headEmail,
-      famLiving.length, famLate.length, famMembers.length, fam.address, areaName, fam.city, fam.state, fam.pincode, fam.status, regDate
+      famLiving.length, famLate.length, famMembers.length, fam.address, areaName, fam.city, fam.state, fam.pincode, fam.status, regDate,
+      makeHyperlink(head.photo_url, 'ફોટો જુઓ (View Photo)'),
+      makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
     ]);
   });
 
@@ -285,7 +312,8 @@ async function buildExcelFile() {
     'ક્રમ', 'પરિવાર કોડ', 'સભ્યનું નામ', 'વડીલ સાથે સંબંધ', 'જાતિ', 'જન્મ તારીખ', 'ઉંમર', 'બ્લડ ગ્રુપ',
     'મૂળ વતન', 'મોબાઈલ નંબર', 'ઈમેલ', 'શિક્ષણ સ્તર', 'કોર્સ / ધોરણ', 'સંસ્થા / કોલેજ', 'અભ્યાસ સ્થિતિ',
     'પાસિંગ વર્ષ', 'વ્યવસાય પ્રકાર', 'પેઢી / કંપની / સંસ્થા', 'હોદ્દો / પદ', 'ધંધાનો પ્રકાર', 'કામનું સ્થળ',
-    'અનુભવ (વર્ષ)', 'પરિવારનું સરનામું', 'શહેર', 'પીનકોડ', 'રહેઠાણ પ્રકાર', 'અલગ સરનામું', 'નોંધણી તારીખ'
+    'અનુભવ (વર્ષ)', 'પરિવારનું સરનામું', 'શહેર', 'પીનકોડ', 'રહેઠાણ પ્રકાર', 'અલગ સરનામું', 'નોંધણી તારીખ',
+    'સભ્યનો ફોટો (Member Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
   ]];
 
   livingMembers.forEach((m, idx) => {
@@ -298,27 +326,32 @@ async function buildExcelFile() {
     const { occType, orgName, desig, businessType, workLoc, exp } = extractOccupationInfo(m, primaryOcc);
     const regDate = m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN') : '';
     const memberEmail = getMemberEmail(m, fam);
+    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
 
     livingMemberRows.push([
       idx + 1, fam.family_code || '', m.name, formatRelation(m.relation), m.gender || '', m.dob || '',
       calculateAge(m.dob, null), m.blood_group || '', m.birth_place || '', m.mobile || '', memberEmail,
-      primaryEdu.education_level || '', primaryEdu.course_or_standard || '',
+      primaryEdu.education_level || '',
+      primaryEdu.course_or_standard ? (primaryEdu.current_year ? `${primaryEdu.course_or_standard} (${primaryEdu.current_year})` : primaryEdu.course_or_standard) : '',
       primaryEdu.institution || m.occupation_details?.school_or_college || '',
       primaryEdu.education_status || m.education_status || '', primaryEdu.passing_year || '',
       occType, orgName, desig,
       businessType, workLoc, exp,
       fam.address || '', fam.city || '', fam.pincode || '', formatResidence(m.residence_type),
-      m.separate_address || '', regDate
+      m.separate_address || '', regDate,
+      makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
+      makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
     ]);
   });
 
   // SHEET 4: સ્વર્ગસ્થ સભ્યો (Late Members - Memorial Directory)
   const lateMemberRows = [[
     'ક્રમ (No.)', 'પરિવાર કોડ (Family Code)', 'સ્વર્ગસ્થ સભ્યનું નામ (Late Member Name)',
-    'વડીલ સાથે સંબંધ (Relation)', 'જાતિ (Gender)', 'જન્મ તારીખ (DOB)', 'સ્વર્ગવાસ તારીખ (Demise Date)',
-    'અવસાન સમયે ઉંમર (Age at Demise)', 'બ્લડ ગ્રુપ (Blood Group)', 'મૂળ વતન (Native Place)',
+    'સંબંધ (Relation)', 'જાતિ (Gender)', 'જન્મ તારીખ (DOB)', 'સ્વર્ગવાસ તારીખ / વર્ષ (Demise Date / Year)',
+    'અવસાન સમયે ઉંમર (Age at Demise)',
     'પરિવારના વડાનું નામ (Family Head)', 'વડાનો મોબાઈલ (Head Contact)',
-    'પરિવારનું સરનામું (Address)', 'શહેર (City)', 'પીનકોડ (Pincode)', 'નોંધણી તારીખ (Registered Date)'
+    'પરિવારનું સરનામું (Address)', 'શહેર (City)',
+    'સ્વર્ગસ્થનો ફોટો (Late Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
   ]];
 
   lateMembers.forEach((m, idx) => {
@@ -326,12 +359,14 @@ async function buildExcelFile() {
     const famMembers = membersByFamily.get(fam.id) || [];
     const head = famMembers.find(fm => fm.relation === 'FAMILY_HEAD' && !isDeceased(fm)) || famMembers.find(fm => fm.relation === 'FAMILY_HEAD') || famMembers[0] || {};
     const demiseDate = m.deceased_date || m.occupation_details?.deceased_date || '';
-    const regDate = m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN') : '';
+    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
 
     lateMemberRows.push([
       idx + 1, fam.family_code || '', m.name, formatRelation(m.relation), m.gender || '', m.dob || '',
-      demiseDate, calculateAge(m.dob, demiseDate), m.blood_group || '', m.birth_place || '',
-      head.name || 'N/A', head.mobile || '', fam.address || '', fam.city || '', fam.pincode || '', regDate
+      demiseDate, calculateAge(m.dob, demiseDate),
+      head.name || 'N/A', head.mobile || '', fam.address || '', fam.city || '',
+      makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
+      makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
     ]);
   });
 
@@ -339,7 +374,8 @@ async function buildExcelFile() {
   const careerRows = [[
     'પરિવાર કોડ', 'સભ્યનું નામ', 'ઉંમર', 'જાતિ', 'મોબાઈલ', 'ઈમેલ', 'શિક્ષણ ડિગ્રી / ધોરણ',
     'સંસ્થા / યુનિવર્સિટી', 'શિક્ષણ સ્થિતિ', 'પાસિંગ વર્ષ', 'વ્યવસાય વર્ગ', 'પેઢી / કંપનીનું નામ',
-    'હોદ્દો / ડેઝિગ્નેશન', 'કામકાજનું સ્થળ', 'અનુભવ (વર્ષ)'
+    'હોદ્દો / ડેઝિગ્નેશન', 'કામકાજનું સ્થળ', 'અનુભવ (વર્ષ)',
+    'સભ્યનો ફોટો (Member Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
   ]];
 
   livingMembers.forEach(m => {
@@ -351,13 +387,16 @@ async function buildExcelFile() {
 
     const { occType, orgName, desig, workLoc, exp } = extractOccupationInfo(m, primaryOcc);
     const memberEmail = getMemberEmail(m, fam);
+    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
 
     careerRows.push([
       fam.family_code || '', m.name, calculateAge(m.dob, null), m.gender || '', m.mobile || '', memberEmail,
       primaryEdu.course_or_standard || primaryEdu.education_level || '',
       primaryEdu.institution || m.occupation_details?.school_or_college || '',
       primaryEdu.education_status || m.education_status || '', primaryEdu.passing_year || '',
-      occType, orgName, desig, workLoc, exp
+      occType, orgName, desig, workLoc, exp,
+      makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
+      makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
     ]);
   });
 
@@ -374,14 +413,37 @@ async function buildExcelFile() {
     { wch: 10 }, { wch: 16 }, { wch: 15 }, { wch: 28 }, { wch: 22 }, { wch: 28 },
     { wch: 14 }, { wch: 18 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 10 },
     { wch: 18 }, { wch: 35 }, { wch: 14 }, { wch: 10 }, { wch: 25 }, { wch: 12 },
-    { wch: 14 }, { wch: 14 }, { wch: 40 },
+    { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
   ];
   wsBooklet['!cols'] = bookletColWidths;
-  wsLiving['!cols'] = bookletColWidths;
+
+  wsFamilies['!cols'] = [
+    { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 16 }, { wch: 28 },
+    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 35 }, { wch: 18 },
+    { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 15 },
+    { wch: 22 }, { wch: 22 }
+  ];
+
+  wsLiving['!cols'] = [
+    { wch: 8 }, { wch: 14 }, { wch: 28 }, { wch: 18 }, { wch: 10 }, { wch: 12 },
+    { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 15 }, { wch: 28 }, { wch: 16 },
+    { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 28 },
+    { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 35 }, { wch: 14 },
+    { wch: 10 }, { wch: 16 }, { wch: 25 }, { wch: 14 },
+    { wch: 22 }, { wch: 22 }
+  ];
+
   wsLate['!cols'] = [
-    { wch: 10 }, { wch: 14 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 14 },
-    { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 25 }, { wch: 16 },
-    { wch: 35 }, { wch: 14 }, { wch: 12 }, { wch: 14 }
+    { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 20 }, { wch: 10 }, { wch: 14 },
+    { wch: 22 }, { wch: 16 }, { wch: 25 }, { wch: 16 }, { wch: 35 }, { wch: 15 },
+    { wch: 22 }, { wch: 22 }
+  ];
+
+  wsCareer['!cols'] = [
+    { wch: 14 }, { wch: 28 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 28 },
+    { wch: 24 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 28 },
+    { wch: 20 }, { wch: 20 }, { wch: 12 },
+    { wch: 22 }, { wch: 22 }
   ];
 
   XLSX.utils.book_append_sheet(wb, wsBooklet, 'સમાજ પુસ્તિકા (Booklet)');
@@ -424,51 +486,96 @@ async function sendEmailWithBackup(filePath, filename, familyCount, livingCount,
     },
   });
 
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const backupId = `ADS-BKP-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+
   const mailOptions = {
     from: `"અમદાવાદ ડાબગર સમાજ" <${recipientEmail}>`,
     to: recipientEmail,
-    subject: `અમદાવાદ ડાબગર સમાજ - સંપૂર્ણ ડેટાબેકઅપ પુસ્તિકા (${new Date().toLocaleDateString('gu-IN')})`,
+    subject: `અમદાવાદ ડાબગર સમાજ - સંપૂર્ણ ડેટાબેકઅપ [${dateStr} ${timeStr}]`,
     html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 650px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-        <h2 style="color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px;">અમદાવાદ ડાબગર સમાજ ડિજિટલ ડિરેક્ટરી</h2>
-        <p>જય શ્રી કૃષ્ણ,</p>
-        <p>આ સાથે ડાબગર સમાજ એપ્લિકેશનના સર્વર પરથી <b>સંપૂર્ણ ડેટાબેકઅપ</b> એક્સેલ ફાઈલ (.xlsx) સ્વરૂપે મોકલેલ છે.</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 650px; margin: auto; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; background: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
         
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; background: #f8fafc;">
-          <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;"><b>કુલ પરિવારો:</b></td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">${familyCount}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;"><b>હયાત સભ્યો (Living):</b></td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; color: #16a34a; font-weight: bold;">${livingCount}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;"><b>સ્વર્ગસ્થ સભ્યો (Late):</b></td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; color: #64748b; font-weight: bold;">${lateCount}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;"><b>કુલ નોંધાયેલ સભ્યો:</b></td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">${memberCount}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;"><b>બેકઅપ તારીખ:</b></td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;">${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-          </tr>
+        <div style="border-bottom: 2px solid #2563eb; padding-bottom: 14px; margin-bottom: 16px;">
+          <h2 style="color: #1e3a8a; margin: 0 0 6px 0; font-size: 22px;">શ્રી અમદાવાદ ડાબગર સમાજ</h2>
+          <p style="color: #64748b; margin: 0; font-size: 14px; font-weight: 500;">સંપૂર્ણ ડિજિટલ ડિરેક્ટરી અને ડેટાબેકઅપ રિપોર્ટ</p>
+        </div>
+
+        <p style="font-size: 15px; margin: 0 0 12px 0;">જય શ્રી કૃષ્ણ,</p>
+        <p style="font-size: 14px; color: #334155; margin: 0 0 18px 0;">
+          અમદાવાદ ડાબગર સમાજ એપ્લિકેશનના સર્વર પરથી લેવાયેલ તાજેતરનો <b>સંપૂર્ણ ડેટાબેકઅપ</b> આ ઈમેલ સાથે એક્સેલ ફાઈલ (<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">.xlsx</code>) સ્વરૂપે સામેલ છે.
+        </p>
+
+        <!-- Summary Stats Card Grid / Table -->
+        <table style="width: 100%; border-collapse: collapse; margin: 0 0 20px 0; background: #f8fafc; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <tbody>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569; width: 45%;"><b>કુલ પરિવારો:</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; font-weight: bold; color: #0f172a; font-size: 15px;">${familyCount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569;"><b>હયાત સભ્યો (Living):</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #15803d; font-weight: bold; font-size: 15px;">${livingCount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569;"><b>સ્વર્ગસ્થ સભ્યો (Late):</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #64748b; font-weight: bold; font-size: 15px;">${lateCount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569;"><b>કુલ નોંધાયેલ સભ્યો:</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; font-weight: bold; color: #1e40af; font-size: 15px;">${memberCount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569;"><b>બેકઅપ સમય:</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #334155;">${dateStr}, ${timeStr}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569;"><b>બેકઅપ રેફરન્સ ID:</b></td>
+              <td style="padding: 10px 14px; border: 1px solid #e2e8f0; font-family: monospace; color: #64748b; font-size: 12px;">${backupId}</td>
+            </tr>
+          </tbody>
         </table>
 
-        <p><b>આ એક્સેલ ફાઈલમાં નીચે મુજબના ૫ અલગ અલગ વિભાગો (Sheets / Tabs) આપેલા છે:</b></p>
-        <ol style="line-height: 1.8;">
-          <li><b>સમાજ પુસ્તિકા (Booklet):</b> પરિવાર પ્રમાણે ગોઠવેલ સંપૂર્ણ સભ્યોની યાદી.</li>
-          <li><b>પરિવારોની યાદી (Families):</b> વડીલોના નામ, હયાત/સ્વર્ગસ્થ સભ્યોની સંખ્યા અને સરનામાની યાદી.</li>
-          <li><b>હયાત સભ્યો (Living Members):</b> સમાજના તમામ હયાત સભ્યોની વિગત (સ્વર્ગસ્થ સભ્યો વગર).</li>
-          <li><b>સ્વર્ગસ્થ સભ્યો (Late Members):</b> સમાજના સ્વર્ગસ્થ વડીલો/સભ્યોની સ્મૃતિ યાદી (અવસાન તારીખ સહિત).</li>
-          <li><b>શિક્ષણ અને રોજગાર (Directory):</b> હયાત સભ્યોના અભ્યાસ અને વ્યવસાયની વિશેષ માહિતી.</li>
-        </ol>
+        <!-- 5 Tabs Breakdown with unique styling and counts -->
+        <div style="margin: 20px 0;">
+          <h4 style="color: #1e3a8a; font-size: 15px; margin: 0 0 12px 0;">📑 આ એક્સેલ ફાઈલની ૫ શીટ્સ (Sheets & Tabs) ની વિગત:</h4>
+          
+          <div style="background: #f1f5f9; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <div style="font-weight: bold; color: #1e293b; font-size: 14px;">૧. સમાજ પુસ્તિકા (Booklet)</div>
+            <div style="color: #475569; font-size: 13px; margin-top: 2px;">પરિવારવાર તમામ સભ્યોની વિગતો, ફોટો લિંક અને ડિજિટલ કાર્ડ લિંક સાથે.</div>
+          </div>
 
-        <p style="color: #64748b; font-size: 12px; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-          આ ઈમેલ અમદાવાદ ડાબગર સમાજ સિસ્ટમ દ્વારા મોકલવામાં આવેલ છે.
-        </p>
+          <div style="background: #f1f5f9; border-left: 4px solid #0284c7; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <div style="font-weight: bold; color: #1e293b; font-size: 14px;">૨. પરિવારોની યાદી (Families)</div>
+            <div style="color: #475569; font-size: 13px; margin-top: 2px;">કુલ ${familyCount} પરિવારોના મુખ્ય વડીલ, સંપર્ક, સરનામું અને ડિજિટલ કાર્ડ લિંક.</div>
+          </div>
+
+          <div style="background: #f1f5f9; border-left: 4px solid #16a34a; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <div style="font-weight: bold; color: #1e293b; font-size: 14px;">૩. હયાત સભ્યો (Living Members)</div>
+            <div style="color: #475569; font-size: 13px; margin-top: 2px;">કુલ ${livingCount} હયાત સભ્યોની સવિસ્તર યાદી, શિક્ષણ, વ્યવસાય, ફોટો અને ડિજિટલ કાર્ડ લિંક.</div>
+          </div>
+
+          <div style="background: #f1f5f9; border-left: 4px solid #64748b; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <div style="font-weight: bold; color: #1e293b; font-size: 14px;">૪. સ્વર્ગસ્થ સભ્યો (Late Members)</div>
+            <div style="color: #475569; font-size: 13px; margin-top: 2px;">કુલ ${lateCount} સ્વર્ગસ્થ વડીલોની સ્મૃતિ નોંધ, અવસાન તારીખ, ફોટો અને ડિજિટલ કાર્ડ લિંક.</div>
+          </div>
+
+          <div style="background: #f1f5f9; border-left: 4px solid #d97706; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+            <div style="font-weight: bold; color: #1e293b; font-size: 14px;">૫. શિક્ષણ અને રોજગાર (Directory)</div>
+            <div style="color: #475569; font-size: 13px; margin-top: 2px;">તમામ સભ્યોના ઉચ્ચ અભ્યાસ, કારકિર્દી, નોકરી/ધંધાની વિશેષ ડિરેક્ટરી.</div>
+          </div>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; padding: 10px 14px; margin: 16px 0; font-size: 13px; color: #1e40af;">
+          💡 <b>નોંધ:</b> એક્સેલ ફાઈલની અંદર આપેલ <b>'ફોટો જુઓ'</b> અને <b>'કાર્ડ જુઓ'</b> લિંક્સ પર ક્લિક કરવાથી સીધા જ સંબંધિત ફોટા અને ડિજિટલ સ્માર્ટ ઓળખપત્ર ઓપન થશે.
+        </div>
+
+        <div style="color: #94a3b8; font-size: 12px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px; display: flex; justify-content: space-between;">
+          <span>શ્રી અમદાવાદ ડાબગર સમાજ સત્તાવાર સિસ્ટમ</span>
+          <span style="font-family: monospace;">${backupId}</span>
+        </div>
       </div>
     `,
     attachments: [

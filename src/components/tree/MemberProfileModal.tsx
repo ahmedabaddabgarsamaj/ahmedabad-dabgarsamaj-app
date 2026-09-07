@@ -148,13 +148,13 @@ export function MemberProfileModal({
               </View>
             ) : null}
 
-            {member.education_status ? (
+            {member.education_status || (member as any).educationRecord ? (
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Education:
+                  Education / શિક્ષણ:
                 </Text>
                 <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {member.education_status}
+                  🎓 {(member as any).educationRecord?.course_or_standard || member.education_status || 'N/A'}{(member as any).educationRecord?.current_year ? ` (${(member as any).educationRecord.current_year})` : ''}
                 </Text>
               </View>
             ) : null}

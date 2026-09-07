@@ -4,11 +4,14 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import ViewShot from 'react-native-view-shot';
 import { useTheme } from '@/constants/theme';
@@ -40,6 +43,8 @@ export function FamilyBookletDetailModal({
 }: FamilyBookletDetailModalProps) {
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const viewShotRef = useRef<any>(null);
 
   const [treeData, setTreeData] = useState<TreeDataStructure | null>(null);
@@ -47,6 +52,10 @@ export function FamilyBookletDetailModal({
   const [selectedTreeMember, setSelectedTreeMember] = useState<FamilyMember | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+
+  const topPadding = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 28) + 12
+    : Math.max(insets.top, 14);
 
   useEffect(() => {
     if (!item) {
@@ -118,11 +127,26 @@ export function FamilyBookletDetailModal({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
+      <StatusBar
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.card}
+        translucent={true}
+      />
       <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
         {/* Top Modal Header */}
-        <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <View
+          style={[
+            styles.modalHeader,
+            {
+              backgroundColor: theme.card,
+              borderBottomColor: theme.border,
+              paddingTop: topPadding,
+            },
+          ]}
+        >
           <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={[styles.modalHeaderTitle, { color: theme.text }]} numberOfLines={1}>
               {familyTitle}
@@ -386,9 +410,20 @@ export function FamilyBookletDetailModal({
                           શિક્ષણ / Education:
                         </Text>
                         <Text style={[styles.detailValue, { color: theme.text }]}>
-                          🎓 {m.education_status || 'N/A'}
+                          🎓 {m.education_status || edu?.course_or_standard || 'N/A'}
                         </Text>
                       </View>
+
+                      {edu?.current_year ? (
+                        <View style={styles.detailRow}>
+                          <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                            અભ્યાસનું વર્ષ / Year:
+                          </Text>
+                          <Text style={[styles.detailValue, { color: theme.text, fontWeight: '600' }]}>
+                            📖 {edu.current_year}
+                          </Text>
+                        </View>
+                      ) : null}
 
                       {edu?.institution ? (
                         <View style={styles.detailRow}>
@@ -595,7 +630,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   modalHeaderTitle: {

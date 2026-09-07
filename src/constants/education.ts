@@ -15,7 +15,6 @@ export const EDUCATION_LEVELS: EducationLevelOption[] = [
 ];
 
 export const SCHOOL_STANDARDS = [
-  'Infant / At Home (ઘરે છે / શાળા શરૂ નથી થઈ)',
   'Playgroup / Nursery',
   'Junior KG (KG 1 / LKG)',
   'Senior KG (KG 2 / UKG)',
@@ -32,6 +31,14 @@ export const SCHOOL_STANDARDS = [
   'Standard 11',
   'Standard 12 (HSC)',
   'Other',
+];
+
+export const COLLEGE_YEARS = [
+  '1st Year',
+  '2nd Year',
+  '3rd Year',
+  '4th Year',
+  '5th Year',
 ];
 
 export const UNDERGRADUATE_COURSES = [

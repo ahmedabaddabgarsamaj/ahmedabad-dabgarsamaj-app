@@ -3,9 +3,11 @@ import {
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -30,6 +32,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 export default function FamilyCardScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
   const { user } = useAuth();
   const params = useLocalSearchParams<{ code?: string; q?: string; family_code?: string }>();
 
@@ -513,11 +516,26 @@ export default function FamilyCardScreen() {
         <Modal
           visible={fullscreenTree}
           animationType="slide"
+          statusBarTranslucent={true}
           onRequestClose={() => setFullscreenTree(false)}
         >
+          <StatusBar
+            barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+            backgroundColor={theme.card}
+            translucent={true}
+          />
           <View style={[styles.fullscreenModal, { backgroundColor: theme.background }]}>
             {/* Modal Header */}
-            <View style={[styles.fullscreenHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View
+              style={[
+                styles.fullscreenHeader,
+                {
+                  backgroundColor: theme.card,
+                  borderBottomColor: theme.border,
+                  paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 12 : 12,
+                },
+              ]}
+            >
               <View style={{ flex: 1 }}>
                 <Text style={[styles.fullscreenTitle, { color: theme.text }]}>
                   🌳 {family.family_code} • કુટુંબ વંશાવલી
