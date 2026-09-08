@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@/constants/theme';
 import { imageService } from '@/lib/storage/imageService';
 import { Avatar } from './Avatar';
@@ -28,6 +28,10 @@ export function PhotoUploadField({
 
   const handlePickPhoto = async () => {
     const res = await imageService.pickProfilePhoto();
+    if (res.error) {
+      Alert.alert('Notice / સૂચના', res.error);
+      return;
+    }
     if (res.uri) {
       onPhotoSelected(res.uri, res.base64);
     }

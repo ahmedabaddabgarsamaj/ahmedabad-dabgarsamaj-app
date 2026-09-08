@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   ImageStyle,
@@ -38,6 +38,11 @@ export function Avatar({
   const theme = useTheme();
   const [imageError, setImageError] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
+
+  // Automatically reset image error state whenever photoUrl updates (e.g. new upload or fallback)
+  useEffect(() => {
+    setImageError(false);
+  }, [photoUrl]);
 
   const getInitial = () => {
     if (!name) return '?';

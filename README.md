@@ -5,6 +5,7 @@
 [![Expo](https://img.shields.io/badge/Expo-v57.0-black.svg?style=flat-square&logo=expo)](https://expo.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E.svg?style=flat-square&logo=supabase)](https://supabase.com)
+[![Cloudinary](https://img.shields.io/badge/Cloudinary-Photo%20Storage-3448C5.svg?style=flat-square&logo=cloudinary)](https://cloudinary.com)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-purple.svg?style=flat-square&logo=pwa)](https://web.dev/progressive-web-apps/)
 
 ---
@@ -57,10 +58,11 @@
 
 ## 🛠️ Tech Stack / તકનીકી માળખું
 
-- **Frontend**: [React Native](https://reactnative.dev) (Expo SDK 52)
+- **Frontend**: [React Native](https://reactnative.dev) (Expo SDK 57)
 - **Routing**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based navigation with direct web URLs)
 - **Styling**: React Native StyleSheet + Harmonious Community Color Tokens
-- **Backend & Database**: [Supabase](https://supabase.com) (PostgreSQL, Row Level Security, Storage Buckets, RPC Functions, Auth)
+- **Backend & Database**: [Supabase](https://supabase.com) (PostgreSQL, Row Level Security, RPC Functions, Auth)
+- **Media & Photo Storage**: [Cloudinary](https://cloudinary.com) (Global CDN, Unsigned Upload Preset, On-The-Fly Optimization)
 - **State & Offline Caching**: SecureStore / LocalStorage hybrid persistence
 - **Icons**: Expo Vector Icons (`Ionicons`)
 - **Graphics & Effects**: Canvas Confetti & Vector Canvas
@@ -79,13 +81,13 @@
 1. [Supabase](https://supabase.com) પર નવો પ્રોજેક્ટ બનાવો.
 2. ડેશબોર્ડમાં **SQL Editor** ખોલો.
 3. આ પ્રોજેક્ટની `supabase/full_schema.sql` ફાઈલની તમામ સ્ક્રિપ્ટ કોપી કરીને રન કરો.
-   *(આ સ્ક્રિપ્ટ તમામ ટેબલ્સ, એરિયા, ફોટો સ્ટોરેજ પોલિસી, ટ્રિગર્સ અને ડિલીટ એકાઉન્ટ RPC ૧ ક્લિકમાં સેટઅપ કરી દેશે)*
+   *(આ સ્ક્રિપ્ટ તમામ ટેબલ્સ, એરિયા, ટ્રિગર્સ અને ડિલીટ એકાઉન્ટ RPC ૧ ક્લિકમાં સેટઅપ કરી દેશે)*
 
 ### Installation / ઇન્સ્ટોલેશન
 
 1. **રિપોઝીટરી ક્લોન કરો:**
    ```bash
-   git clone https://github.com/Jainish-2901/ahmedabad-dabgarsamaj-app.git
+   git clone https://github.com/ahmedabaddabgarsamaj/ahmedabad-dabgarsamaj-app.git
    cd ahmedabad-dabgarsamaj-app
    ```
 
@@ -95,12 +97,17 @@
    ```
 
 3. **Environment Variables સેટઅપ કરો:**
-   રૂટ ડિરેક્ટરીમાં `.env` ફાઈલ બનાવો અને તમારા Supabase credentials ઉમેરો:
+   રૂટ ડિરેક્ટરીમાં `.env` ફાઈલ બનાવો અને તમારા Supabase તેમજ Cloudinary credentials ઉમેરો:
    ```env
    EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+
+   # Cloudinary Configuration for Member Profile Photos
+   EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+   EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET=family_members
+
    # Optional: Direct APK download URL
-   # EXPO_PUBLIC_APK_URL=https://your-project.supabase.co/storage/v1/object/public/app-releases/ahmedabad-dabgarsamaj.apk
+   # EXPO_PUBLIC_APK_URL=https://your-domain.com/ahmedabad-dabgarsamaj.apk
    ```
 
 4. **ડેવલપમેન્ટ સર્વર શરૂ કરો:**
@@ -147,7 +154,7 @@ npx eas build -p android --profile production
 │   │   └── ui/              # કન્ફેટી કેનન, બટન, ઇનપુટ, પાસવર્ડ મીટર, સ્કેલેટન
 │   ├── constants/           # થીમ, સંબંધો, શિક્ષણ અને વ્યવસાય લિસ્ટ
 │   ├── features/            # Auth, Directory, Family, Members, Tree Services
-│   ├── lib/                 # Supabase ક્લાયન્ટ, AppStorage (FileSystem કાયમી સ્ટોરેજ), PDF/Date યુટિલિટીઝ
+│   ├── lib/                 # Supabase ક્લાયન્ટ, Cloudinary Image Service, AppStorage (FileSystem કાયમી સ્ટોરેજ), PDF/Date યુટિલિટીઝ
 │   └── types/               # TypeScript ડેટાબેઝ ટાઇપ્સ
 ├── supabase/                # ડેટાબેઝ સ્કીમા અને માઈગ્રેશન સ્ક્રિપ્ટ્સ (full_schema.sql, 05_add_member_email_and_auth.sql)
 ├── app.json                 # Expo રૂપરેખાંકન

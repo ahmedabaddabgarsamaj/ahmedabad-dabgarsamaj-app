@@ -1,6 +1,4 @@
 import * as ImagePicker from 'expo-image-picker';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
-import { decode } from 'base64-arraybuffer';
 import { Platform } from 'react-native';
 
 export interface UploadMemberPhotoParams {
@@ -10,6 +8,9 @@ export interface UploadMemberPhotoParams {
   headName?: string;
   memberName: string;
 }
+
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || 'boakrxdu';
+const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'family_members';
 
 export const imageService = {
   /**
@@ -47,62 +48,72 @@ export const imageService = {
   },
 
   /**
-   * Upload photo to Supabase Storage bucket: member-photos
-   * File path pattern: {familyId}/{headName}_{memberName}_avatar.jpg
+   * Upload photo to Cloudinary
+   * Returns secure HTTPS CDN URL on success
    */
   async uploadMemberPhoto(params: UploadMemberPhotoParams): Promise<{ url: string; error?: string }> {
-    const { uri, base64, familyId = 'general', headName = 'head', memberName } = params;
+    const { uri, base64, headName = 'head', memberName } = params;
 
-    if (!isSupabaseConfigured || !uri) {
+    if (!uri) {
+      return { url: uri };
+    }
+
+    // If it's already a remote hosted URL (Cloudinary / Supabase), no need to re-upload
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      return { url: uri };
+    }
+
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      console.warn('Cloudinary configuration missing. Returning local URI.');
       return { url: uri };
     }
 
     try {
       const cleanHead = headName.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
       const cleanMember = memberName.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-      const fileName = `${cleanHead}_${cleanMember}_avatar.jpg`;
-      const filePath = `${familyId}/${fileName}`;
+      const fileName = `${cleanHead}_${cleanMember}_${Date.now()}`;
 
-      let uploadBody: any;
-      let contentType = 'image/jpeg';
+      const formData = new FormData();
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('filename_override', fileName);
 
       if (base64) {
-        uploadBody = decode(base64);
+        const dataUri = base64.startsWith('data:') ? base64 : `data:image/jpeg;base64,${base64}`;
+        formData.append('file', dataUri);
       } else if (uri.startsWith('data:')) {
-        const parts = uri.split(',');
-        const mimeMatch = parts[0].match(/:(.*?);/);
-        if (mimeMatch) contentType = mimeMatch[1];
-        uploadBody = decode(parts[1]);
-      } else {
-        // Fetch blob from URI (works on Web blob URLs and local URIs)
+        formData.append('file', uri);
+      } else if (Platform.OS === 'web') {
         const response = await fetch(uri);
         const blob = await response.blob();
-        uploadBody = blob;
-        if (blob.type) contentType = blob.type;
+        formData.append('file', blob);
+      } else {
+        // Native React Native / Expo local URI
+        formData.append('file', {
+          uri,
+          type: 'image/jpeg',
+          name: `${fileName}.jpg`,
+        } as any);
       }
 
-      const { data, error } = await supabase.storage
-        .from('member-photos')
-        .upload(filePath, uploadBody, {
-          contentType,
-          upsert: true,
-        });
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (error) {
-        console.error('Supabase photo upload error:', error.message);
-        return { url: uri, error: error.message };
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        const errorMsg = data.error?.message || 'Failed to upload photo to Cloudinary';
+        console.error('Cloudinary photo upload error:', errorMsg);
+        return { url: uri, error: errorMsg };
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('member-photos')
-        .getPublicUrl(data.path);
-
-      // Add cache-busting timestamp query so Web browser always displays newest uploaded image
-      const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
-      return { url: publicUrl };
+      return { url: data.secure_url };
     } catch (err: any) {
       console.error('Upload catch error:', err);
       return { url: uri, error: err?.message || 'Failed to upload photo' };
     }
   },
 };
+

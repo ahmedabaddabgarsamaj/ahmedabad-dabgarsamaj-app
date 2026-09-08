@@ -117,7 +117,7 @@ export default function HeadProfileScreen() {
     setSaving(true);
 
     let finalPhotoUrl = photoUrl;
-    if (photoUrl && photoBase64) {
+    if (photoUrl && (photoBase64 || photoUrl.startsWith('blob:') || photoUrl.startsWith('data:') || photoUrl.startsWith('file:') || photoUrl.startsWith('ph:'))) {
       const uploadRes = await imageService.uploadMemberPhoto({
         uri: photoUrl,
         base64: photoBase64,
@@ -125,6 +125,9 @@ export default function HeadProfileScreen() {
         headName: name,
         memberName: name,
       });
+      if (uploadRes.error) {
+        Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
+      }
       finalPhotoUrl = uploadRes.url;
     }
 
