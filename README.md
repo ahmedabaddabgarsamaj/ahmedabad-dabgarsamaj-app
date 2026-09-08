@@ -18,10 +18,12 @@
 
 ## ✨ Key Features / મુખ્ય વિશેષતાઓ
 
-### 1. 📖 ડિજિટલ પરિચય પુસ્તિકા (Community Directory & Booklet)
+### 1. 📖 ડિજિટલ પરિચય પુસ્તિકા & એક્સપોર્ટ (Directory, PDF, Excel & Print)
 - સમગ્ર સમાજના પરિવારોની યાદી, મુખ્ય વડીલનું નામ, ગામ/વિસ્તાર અને સભ્યોની સંખ્યા.
 - **ઝડપી ફિલ્ટર્સ**: નામ, વ્યવસાય (Occupation), શિક્ષણ (Education), બ્લડ ગ્રૂપ (Blood Group) અને વિસ્તાર (Area).
-- પ્રત્યેક પરિવારની વિસ્તૃત પ્રોફાઇલ, સભ્યોની વિગતો અને એક-ક્લિક પીડીએફ એક્સપોર્ટ.
+- **📄 PDF Export & Direct Print**: સિંગલ પરિવાર તેમજ આખી પરિચય પુસ્તિકાનું સુંદર PDF ડાઉનલોડ અને ડાયરેક્ટ પ્રિન્ટ.
+- **📊 Native Excel (.xlsx) Export**: પરિચય પુસ્તિકા પેજ પરથી ૧ ક્લિકમાં સમગ્ર સમાજનું ૫-શીટ્સ વાળું માસ્ટર એક્સેલ (૧. સમાજ પુસ્તિકા, ૨. પરિવારોની યાદી, ૩. હયાત સભ્યો, ૪. સ્વર્ગસ્થ સભ્યો, ૫. શિક્ષણ અને રોજગાર) ફોર્મેટમાં ડાઉનલોડ અને WhatsApp / Files માં નેટિવ શેરિંગ.
+- **🗄️ Automated Email Backup (`npm run backup`)**: સર્વર પરથી આખો ડેટાબેઝ એક્સેલ શીટ બનાવી એડમિન ઈમેલ પર ઓટોમેટિક મોકલવાની બેકઅપ સ્ક્રિપ્ટ.
 
 ### 2. 🌳 ઇન્ટરેક્ટિવ ફેમિલી ટ્રી (Hierarchical Family Tree Graph)
 - પરિવારના સભ્યો વચ્ચેના સંબંધો (Spouse, Parent-Child) મુજબ ઓટોમેટિક ૩-પેઢીનું વંશાવલી વૃક્ષ.
@@ -33,18 +35,31 @@
 - પરિવારનો ક્યુઆર કોડ, હેડનું નામ, સરનામું, બ્લડ ગ્રૂપ અને સભ્યોની યાદી.
 - પ્રિન્ટ તેમજ કાર્ડ ઇમેજ એક્સપોર્ટ કરવાની સગવડ.
 
-### 4. 👥 સભ્ય એડિટ પરવાનગી અને OTP રીસેટ (Authorized Member Edit & OTP Recovery)
-- **સભ્ય એડિટ પરવાનગી (Grant Edit Access)**: પરિવારના વડા પરિવારના કોઈપણ સભ્યને એડિટ પરવાનગી આપી શકે છે અને તે સમયે તેમનો સત્તાવાર Email ID નોંધી શકે છે.
-- **ઓથોરાઇઝ્ડ સભ્ય OTP પાસવર્ડ રીસેટ**: ભવિષ્યમાં જો એડિટ પરવાનગી ધરાવતો સભ્ય પાસવર્ડ ભૂલી જાય, તો પોતાનો મોબાઈલ કે ઈમેઈલ નાખીને સીધો **પોતાના જ ઈમેઈલ પર ૬ આંકડાનો OTP** મેળવીને પાસવર્ડ રીસેટ કરી શકે છે.
-- **સુરક્ષા પ્રોટેક્શન**: સામાન્ય સભ્યો પાસવર્ડ રીસેટ કરી શકતા નથી, માત્ર વડા અથવા અધિકૃત સભ્યો જ કરી શકે છે.
+### 4. 💼 વિસ્તૃત વ્યવસાય માહિતી (Structured Dynamic Occupations)
+- ૧૨ અલગ-અલગ કેટેગરીઓ (વિદ્યાર્થી, નોકરી, વેપાર, દુકાનદાર, પ્રોફેશનલ, સ્વરોજગાર વગેરે) માટે સ્પષ્ટ ફીલ્ડ્સ.
+- **"Other / અન્ય" કેટેગરી માટે ૪ વિશિષ્ટ ફીલ્ડ્સ**:
+  1. વ્યવસાયનું નામ (Occupation / Work Name)
+  2. પેઢી / કંપની / સંસ્થાનું નામ (Firm / Company / Workplace)
+  3. કામનું સ્થળ / શહેર (Work City / Location)
+  4. અન્ય વિગત (Additional Details / Notes)
+- આ તમામ વિગતો પ્રોફાઈલ, પુસ્તિકા, PDF, Print અને Excel માં સ્પષ્ટ રીતે દર્શાવાય છે.
 
-### 5. 🔐 મજબૂત સુરક્ષા & કાયમી લૉગિન (Permanent Session Persistence like WhatsApp / Instagram)
+### 5. 👥 સભ્ય રિકવરી ઈમેઈલ અને OTP રીસેટ (Member Recovery Email & Password Reset)
+- **રિકવરી ઈમેઈલ**: પરિવારના દરેક સભ્ય માટે અલગ ઈમેઈલ આઈડી સેટ કરવાનો વિકલ્પ.
+- **ઓથોરાઇઝ્ડ સભ્ય OTP પાસવર્ડ રીસેટ**: ભવિષ્યમાં પાસવર્ડ ભૂલી જવાના સંજોગોમાં સભ્ય સીધો **પોતાના જ ઈમેઈલ પર ૮ આંકડાનો સુરક્ષિત OTP** મેળવીને પાસવર્ડ રીસેટ કરી શકે છે.
+- **પરિવારના વડા (Head Role)**: વડા માટે કાયમી "Family Head / પરિવારના મુખ્ય વડા" બેજ દર્શાવાય છે.
+
+### 6. 🖼️ Cloudinary સિક્યોર ફોટો મેનેજમેન્ટ (Signed Overwrite & Auto-Delete)
+- **Signed Overwrite**: Cloudinary API Key અને Secret સાથે સુરક્ષિત SHA-1 સહી વડે ફોટો સીધો એ જ સ્થાન પર ઓવરરાઈટ થાય છે, જેથી ડુપ્લિકેટ ફોટા બનતા નથી.
+- **Auto-Delete (Cloudinary Destroy API)**: સભ્યનો ફોટો રિમૂવ કરતાં કે સભ્યને ડિલીટ કરતાં ક્લાઉડિનરી પરથી જૂનો ફોટો આપમેળે કાયમ માટે ડિલીટ થઈ જાય છે.
+
+### 7. 🔐 મજબૂત સુરક્ષા & કાયમી લૉગિન (Permanent Session Persistence like WhatsApp / Instagram)
 - **WhatsApp/Instagram જેવું કાયમી લૉગિન**: `FileSystem` આધારિત પર્સિસ્ટન્ટ ફાઈલ સ્ટોરેજ (`appStorage.ts`) વડે એપ બેકગ્રાઉન્ડમાંથી સ્વાઈપ કરો કે ફોન રીસ્ટાર્ટ કરો—લૉગિન ક્યારેય જતું નથી. માત્ર જાતે "Logout" દબાવવાથી જ લૉગઆઉટ થાય છે.
 - **8-Digit Email OTP Password Reset**: ઇમેઇલ પર ૮-અંકનો સત્તાવાર OTP મેળવીને પાસવર્ડ રીસેટ કરવાની સુરક્ષિત પદ્ધતિ.
 - **Live Password Strength Indicator**: મજબૂત પાસવર્ડ બનાવવા માટે ૪ નિયમો સાથેનું લાઈવ ઈન્ડિકેટર.
 - **⚠️ Danger Zone (Delete Family & Account)**: Google Play Store & Apple App Store ની ગાઇડલાઇન મુજબ ફેમિલી હેડ માટે ડબલ કન્ફર્મેશન (`DELETE`) સાથે કાયમી એકાઉન્ટ અને ડેટા ડિલીટ કરવાનો વિકલ્પ.
 
-### 6. 📱 ક્રોસ-પ્લેટફોર્મ, ડાઉનલોડ પેજ & PWA સપોર્ટ (Cross-Platform & PWA)
+### 8. 📱 ક્રોસ-પ્લેટફોર્મ, ડાઉનલોડ પેજ & PWA સપોર્ટ (Cross-Platform & PWA)
 - **Direct App Download Route (`/download`)**:
   - **Android**: સીધી `Ahmedabad-Dabgar-Samaj.apk` ડાઉનલોડ કરવાની સુવિધા.
   - **iOS (iPhone/iPad)**: Safari માંથી ૧ ક્લિકમાં "Add to Home Screen" કરવા માટેનું ઇન્ટરેક્ટિવ વિઝ્યુઅલ ગાઇડ મોડલ.
@@ -62,10 +77,10 @@
 - **Routing**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based navigation with direct web URLs)
 - **Styling**: React Native StyleSheet + Harmonious Community Color Tokens
 - **Backend & Database**: [Supabase](https://supabase.com) (PostgreSQL, Row Level Security, RPC Functions, Auth)
-- **Media & Photo Storage**: [Cloudinary](https://cloudinary.com) (Global CDN, Unsigned Upload Preset, On-The-Fly Optimization)
+- **Media & Photo Storage**: [Cloudinary](https://cloudinary.com) (Global CDN, Signed Overwrite, Destroy API, Pure JS SHA-1)
+- **Document & Data Export**: `expo-print`, `expo-sharing`, `xlsx` (SheetJS), `html2pdf.js`
 - **State & Offline Caching**: SecureStore / LocalStorage hybrid persistence
 - **Icons**: Expo Vector Icons (`Ionicons`)
-- **Graphics & Effects**: Canvas Confetti & Vector Canvas
 
 ---
 
@@ -102,9 +117,11 @@
    EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 
-   # Cloudinary Configuration for Member Profile Photos
+   # Cloudinary Configuration for Member Profile Photos (Signed Overwrite & Destroy API)
    EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
    EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET=family_members
+   EXPO_PUBLIC_CLOUDINARY_API_KEY=your-cloudinary-api-key
+   EXPO_PUBLIC_CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 
    # Optional: Direct APK download URL
    # EXPO_PUBLIC_APK_URL=https://your-domain.com/ahmedabad-dabgarsamaj.apk

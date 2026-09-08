@@ -1,4 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import { ConfettiCanon } from '@/components/ui/ConfettiCanon';
+import { useTheme } from '@/constants/theme';
+import { useAuth } from '@/features/auth/AuthContext';
+import { useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -9,10 +13,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/features/auth/AuthContext';
-import { useTheme } from '@/constants/theme';
-import { ConfettiCanon } from '@/components/ui/ConfettiCanon';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -79,7 +79,7 @@ export default function RootSplashScreen() {
 
     // 4. Record splash start time and navigate once ready
     let isMounted = true;
-    const minSplashDuration = 2500;
+    const minSplashDuration = 3000;
     const startTime = Date.now();
 
     const checkAndNavigate = () => {
@@ -165,7 +165,7 @@ export default function RootSplashScreen() {
           ]}
         >
           <Text style={[styles.welcomeText, { color: theme.primary }]}>
-            ✨ એપ માં આપનું હાર્દિક સ્વાગત છે 🙏
+            ✨ અમદાવાદ ડબગર સમાજ પરિવારની ડિજિટલ પરિચય પુસ્તિકામાં આપનું હાર્દિક સ્વાગત છે 🙏
           </Text>
         </Animated.View>
       </View>
@@ -235,11 +235,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   welcomeBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 20,
     borderWidth: 1.5,
     marginTop: 8,
+    maxWidth: 350,
+    alignSelf: 'center',
     ...Platform.select({
       web: {
         boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
@@ -250,10 +252,11 @@ const styles = StyleSheet.create({
     }),
   },
   welcomeText: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13.5,
+    fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: 0.3,
+    lineHeight: 21,
+    letterSpacing: 0.2,
   },
   footer: {
     position: 'absolute',

@@ -181,7 +181,7 @@ export default function AddMemberScreen() {
     setErrorMessage('');
 
     let finalPhotoUrl = photoUrl;
-    if (photoUrl && (photoBase64 || photoUrl.startsWith('blob:') || photoUrl.startsWith('data:') || photoUrl.startsWith('file:'))) {
+    if (photoUrl && !photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
       const head = existingMembers.find((m) => m.relation === 'FAMILY_HEAD');
       const uploadRes = await imageService.uploadMemberPhoto({
         uri: photoUrl,
@@ -190,6 +190,12 @@ export default function AddMemberScreen() {
         headName: head?.name || 'head',
         memberName: name,
       });
+      if (uploadRes.error) {
+        setLoading(false);
+        setErrorMessage(`Photo upload failed: ${uploadRes.error}`);
+        Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
+        return;
+      }
       finalPhotoUrl = uploadRes.url;
     }
 

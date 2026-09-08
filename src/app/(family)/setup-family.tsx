@@ -68,13 +68,18 @@ export default function SetupFamilyScreen() {
     setLoading(true);
 
     let finalPhotoUrl = photoUrl;
-    if (photoUrl && (photoBase64 || photoUrl.startsWith('blob:') || photoUrl.startsWith('data:') || photoUrl.startsWith('file:'))) {
+    if (photoUrl && !photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
       const uploadRes = await imageService.uploadMemberPhoto({
         uri: photoUrl,
         base64: photoBase64,
         headName: name,
         memberName: name,
       });
+      if (uploadRes.error) {
+        setLoading(false);
+        Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
+        return;
+      }
       finalPhotoUrl = uploadRes.url;
     }
 

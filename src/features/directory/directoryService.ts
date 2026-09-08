@@ -114,11 +114,20 @@ export function getMemberMatchHighlight(m: FamilyMember, query: string): string 
   if (m.occupationRecord?.designation && m.occupationRecord.designation.toLowerCase().includes(q)) {
     return `💼 ${m.occupationRecord.designation}`;
   }
+  if (m.occupation_details?.occupation_name && String(m.occupation_details.occupation_name).toLowerCase().includes(q)) {
+    return `💼 ${m.occupation_details.occupation_name}`;
+  }
   if (m.occupationRecord?.organization_name && m.occupationRecord.organization_name.toLowerCase().includes(q)) {
     return `🏢 ${m.occupationRecord.organization_name}`;
   }
+  if (m.occupation_details?.workplace_or_firm && String(m.occupation_details.workplace_or_firm).toLowerCase().includes(q)) {
+    return `🏢 ${m.occupation_details.workplace_or_firm}`;
+  }
   if (m.occupationRecord?.business_name && m.occupationRecord.business_name.toLowerCase().includes(q)) {
     return `🏢 ${m.occupationRecord.business_name}`;
+  }
+  if (m.occupation_details?.work_location && String(m.occupation_details.work_location).toLowerCase().includes(q)) {
+    return `📍 ${m.occupation_details.work_location}`;
   }
   if (m.occupation_type && m.occupation_type.toLowerCase().includes(q)) {
     return `💼 ${m.occupation_type}`;

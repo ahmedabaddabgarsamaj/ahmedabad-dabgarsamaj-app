@@ -125,7 +125,27 @@ export const OCCUPATIONS: OccupationOption[] = [
     gujaratiLabel: 'અન્ય',
     displayLabel: 'Other / અન્ય',
     fields: [
-      { key: 'notes', label: 'Details', placeholder: 'Please specify' },
+      {
+        key: 'occupation_name',
+        label: 'Occupation / Work Name / વ્યવસાયનું નામ',
+        placeholder: 'e.g. Graphic Designer / Tuition Classes / Driver / Artist',
+        required: true,
+      },
+      {
+        key: 'workplace_or_firm',
+        label: 'Firm / Company / Workplace / પેઢી કે સંસ્થાનું નામ',
+        placeholder: 'e.g. Self / Private Firm Name',
+      },
+      {
+        key: 'work_location',
+        label: 'Work City / Location / કાર્યનું સ્થળ કે શહેર',
+        placeholder: 'e.g. Nikol, Ahmedabad',
+      },
+      {
+        key: 'notes',
+        label: 'Additional Details / અન્ય વિગત (Optional)',
+        placeholder: 'વ્યવસાય અંગે અન્ય કોઈ વિગત...',
+      },
     ],
   },
 ];

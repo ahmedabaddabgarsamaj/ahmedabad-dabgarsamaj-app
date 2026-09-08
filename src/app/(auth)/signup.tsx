@@ -120,17 +120,20 @@ export default function SignupScreen() {
           <Text style={[styles.title, { color: theme.text }]}>
             અમદાવાદ ડબગર સમાજ પરિવાર રજીસ્ટ્રેશન
           </Text>
+        </View>
+
+        <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View
             style={[
               styles.headNoticeCard,
               {
-                backgroundColor: theme.primary + '12',
-                borderColor: theme.primary + '40',
+                backgroundColor: theme.primary + '10',
+                borderColor: theme.primary + '30',
               },
             ]}
           >
             <View style={styles.headNoticeHeader}>
-              <View style={[styles.headNoticeIconCircle, { backgroundColor: theme.primary + '22' }]}>
+              <View style={[styles.headNoticeIconCircle, { backgroundColor: theme.primary + '20' }]}>
                 <Ionicons name="person" size={15} color={theme.primary} />
               </View>
               <Text style={[styles.headNoticeTitle, { color: theme.primary }]}>
@@ -141,9 +144,7 @@ export default function SignupScreen() {
               રજીસ્ટ્રેશન ફક્ત પરિવારના મુખ્ય વડીલના મોબાઈલ/ઈમેઈલથી જ કરવું. પરિવારના અન્ય સભ્યોને ખાતું બન્યા પછી અંદરથી સરળતાથી ઉમેરી શકાશે.
             </Text>
           </View>
-        </View>
 
-        <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {errorMessage ? (
             <View style={[styles.errorBanner, { backgroundColor: theme.errorLight, borderColor: theme.error }]}>
               <Text style={[styles.errorBannerText, { color: theme.error }]}>
@@ -357,11 +358,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headNoticeCard: {
-    marginTop: 14,
-    paddingHorizontal: 16,
+    marginBottom: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
-    borderWidth: 1.5,
+    borderWidth: 1,
     width: '100%',
     alignItems: 'center',
   },

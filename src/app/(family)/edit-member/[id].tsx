@@ -52,6 +52,7 @@ export default function EditMemberScreen() {
   // 1. Basic Details
   const [name, setName] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [initialPhotoUrl, setInitialPhotoUrl] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [gender, setGender] = useState<'Male' | 'Female'>('Male');
   const [isDeceased, setIsDeceased] = useState<boolean>(false);
@@ -139,6 +140,7 @@ export default function EditMemberScreen() {
 
         setName(m.name);
         setPhotoUrl(m.photo_url || null);
+        setInitialPhotoUrl(m.photo_url || null);
         setGender((m.gender as any) || 'Male');
         setIsDeceased(m.is_deceased === true || (m as any).status === 'DECEASED' || m.occupation_details?.is_deceased === true);
         setDeceasedDate(m.deceased_date || '');
@@ -179,6 +181,7 @@ export default function EditMemberScreen() {
     loadAll();
   }, [id]);
 
+  const isFamilyHead = relation === 'FAMILY_HEAD';
   const selectedRel = RELATIONSHIPS.find((r) => r.code === relation);
 
   const filteredRelationships = RELATIONSHIPS.filter((r) => {
@@ -218,15 +221,26 @@ export default function EditMemberScreen() {
     setSaving(true);
 
     let finalPhotoUrl = photoUrl;
-    if (photoUrl && (photoBase64 || photoUrl.startsWith('blob:') || photoUrl.startsWith('data:') || photoUrl.startsWith('file:'))) {
+    if (!photoUrl && initialPhotoUrl) {
+      // Photo was removed from UI -> delete from Cloudinary
+      await imageService.deleteMemberPhoto(initialPhotoUrl);
+      finalPhotoUrl = null;
+    } else if (photoUrl && !photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
       const head = otherMembers.find((m) => m.relation === 'FAMILY_HEAD');
       const uploadRes = await imageService.uploadMemberPhoto({
         uri: photoUrl,
         base64: photoBase64,
         familyId: family?.id || 'general',
+        memberId: id,
+        currentPhotoUrl: initialPhotoUrl,
         headName: head?.name || 'head',
         memberName: name,
       });
+      if (uploadRes.error) {
+        setSaving(false);
+        Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
+        return;
+      }
       finalPhotoUrl = uploadRes.url;
     }
 
@@ -241,7 +255,7 @@ export default function EditMemberScreen() {
         photo_url: finalPhotoUrl,
         gender,
         dob: dob.trim() ? formatDateForDB(dob.trim()) : '',
-        relation,
+        relation: isFamilyHead ? 'FAMILY_HEAD' : relation,
         mobile: isDeceased ? null : (mobile.trim() || null),
         blood_group: isDeceased ? null : (bloodGroup.trim() || null),
         birth_place: isDeceased ? null : (birthPlace.trim() || null),
@@ -258,7 +272,7 @@ export default function EditMemberScreen() {
       isDeceased ? undefined : {
         education_level: educationLevel,
         course_or_standard: finalCourse,
-        current_year: currentYear || null,
+        current_year: currentYear || undefined,
         education_status: eduStatus,
         passing_year: passingYear ? parseInt(passingYear, 10) : undefined,
         institution,
@@ -269,8 +283,8 @@ export default function EditMemberScreen() {
       }
     );
 
-    // Update relationship link if family exists
-    if (family && selectedRel && connectedMemberId) {
+    // Update relationship link if family exists (not applicable to Family Head)
+    if (!isFamilyHead && family && selectedRel && connectedMemberId) {
       if (selectedRel.connectType === 'spouse_of') {
         await relationshipsService.addRelationship(
           family.id,
@@ -553,90 +567,120 @@ export default function EditMemberScreen() {
               </>
             )}
 
-            {/* Searchable Relationship Picker */}
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.text }]}>Relationship / સંબંધ *</Text>
-              <Input
-                placeholder="🔍 Search relationship (e.g. wife, son, ભાભી, દીકરો)..."
-                value={relSearch}
-                onChangeText={setRelSearch}
-                style={{ marginBottom: 8 }}
-              />
-
-              <ScrollView style={styles.relScrollList} nestedScrollEnabled>
-                {filteredRelationships.map((r) => (
-                  <TouchableOpacity
-                    key={r.code}
-                    onPress={() => {
-                      setRelation(r.code);
-                      if (!connectedMemberId && otherMembers.length > 0) {
-                        const head = otherMembers.find((m) => m.relation === 'FAMILY_HEAD');
-                        setConnectedMemberId(head ? head.id : otherMembers[0].id);
-                      }
-                    }}
-                    style={[
-                      styles.relItem,
-                      {
-                        backgroundColor: relation === r.code ? theme.primaryLight : 'transparent',
-                        borderColor: relation === r.code ? theme.primary : theme.border,
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.relText, { color: relation === r.code ? theme.primary : theme.text }]}>
-                      {r.displayLabel}
+            {/* If member is FAMILY_HEAD: Display head role badge; otherwise show searchable relationship picker */}
+            {isFamilyHead ? (
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Role in Family / પરિવારમાં ભૂમિકા</Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 14,
+                    borderRadius: 12,
+                    backgroundColor: theme.primaryLight,
+                    borderWidth: 1.5,
+                    borderColor: theme.primary,
+                  }}
+                >
+                  <Ionicons name="ribbon" size={26} color={theme.primary} style={{ marginRight: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: theme.primary }}>
+                      Family Head / પરિવારના મુખ્ય વડા
                     </Text>
-                    {relation === r.code ? (
-                      <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
-                    ) : null}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+                    <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 3 }}>
+                      આ સભ્ય આખા પરિવારના મુખ્ય વડા છે. તેમના માટે કોઈ સંબંધ પસંદ કરવાની જરૂર નથી.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <>
+                {/* Searchable Relationship Picker */}
+                <View style={styles.fieldGroup}>
+                  <Text style={[styles.fieldLabel, { color: theme.text }]}>Relationship / સંબંધ *</Text>
+                  <Input
+                    placeholder="🔍 Search relationship (e.g. wife, son, ભાભી, દીકરો)..."
+                    value={relSearch}
+                    onChangeText={setRelSearch}
+                    style={{ marginBottom: 8 }}
+                  />
 
-            {/* Connected Person Selector in Edit Mode */}
-            {selectedRel && selectedRel.connectPrompt && otherMembers.length > 0 ? (
-              <View style={[styles.connectedBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
-                {(() => {
-                  const connectedPerson = otherMembers.find((m) => m.id === connectedMemberId);
-                  return (
-                    <>
-                      <Text style={[styles.connectedPrompt, { color: theme.primary, fontWeight: '700' }]}>
-                        {connectedPerson && selectedRel.relationOf
-                          ? `🔗 ${selectedRel.englishLabel} of ${connectedPerson.name} (${connectedPerson.name} ${selectedRel.relationOf.split('/')[1]?.trim() || ''})`
-                          : `🔗 ${selectedRel.connectPrompt}`}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
-                        Select relative from list / નીચેથી સંબંધિત સભ્ય પસંદ કરો:
-                      </Text>
-                    </>
-                  );
-                })()}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-                  {otherMembers.map((m) => (
-                    <TouchableOpacity
-                      key={m.id}
-                      onPress={() => setConnectedMemberId(m.id)}
-                      style={[
-                        styles.connectedPill,
-                        {
-                          backgroundColor: connectedMemberId === m.id ? theme.primary : theme.card,
-                          borderColor: theme.primary,
-                        },
-                      ]}
-                    >
-                      <Text
+                  <ScrollView style={styles.relScrollList} nestedScrollEnabled>
+                    {filteredRelationships.map((r) => (
+                      <TouchableOpacity
+                        key={r.code}
+                        onPress={() => {
+                          setRelation(r.code);
+                          if (!connectedMemberId && otherMembers.length > 0) {
+                            const head = otherMembers.find((m) => m.relation === 'FAMILY_HEAD');
+                            setConnectedMemberId(head ? head.id : otherMembers[0].id);
+                          }
+                        }}
                         style={[
-                          styles.connectedPillText,
-                          { color: connectedMemberId === m.id ? '#FFFFFF' : theme.text },
+                          styles.relItem,
+                          {
+                            backgroundColor: relation === r.code ? theme.primaryLight : 'transparent',
+                            borderColor: relation === r.code ? theme.primary : theme.border,
+                          },
                         ]}
                       >
-                        {m.name} ({m.display_relation?.split('/')[0].trim() || m.relation})
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            ) : null}
+                        <Text style={[styles.relText, { color: relation === r.code ? theme.primary : theme.text }]}>
+                          {r.displayLabel}
+                        </Text>
+                        {relation === r.code ? (
+                          <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
+                        ) : null}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Connected Person Selector in Edit Mode */}
+                {selectedRel && selectedRel.connectPrompt && otherMembers.length > 0 ? (
+                  <View style={[styles.connectedBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
+                    {(() => {
+                      const connectedPerson = otherMembers.find((m) => m.id === connectedMemberId);
+                      return (
+                        <>
+                          <Text style={[styles.connectedPrompt, { color: theme.primary, fontWeight: '700' }]}>
+                            {connectedPerson && selectedRel.relationOf
+                              ? `🔗 ${selectedRel.englishLabel} of ${connectedPerson.name} (${connectedPerson.name} ${selectedRel.relationOf.split('/')[1]?.trim() || ''})`
+                              : `🔗 ${selectedRel.connectPrompt}`}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
+                            Select relative from list / નીચેથી સંબંધિત સભ્ય પસંદ કરો:
+                          </Text>
+                        </>
+                      );
+                    })()}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                      {otherMembers.map((m) => (
+                        <TouchableOpacity
+                          key={m.id}
+                          onPress={() => setConnectedMemberId(m.id)}
+                          style={[
+                            styles.connectedPill,
+                            {
+                              backgroundColor: connectedMemberId === m.id ? theme.primary : theme.card,
+                              borderColor: theme.primary,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.connectedPillText,
+                              { color: connectedMemberId === m.id ? '#FFFFFF' : theme.text },
+                            ]}
+                          >
+                            {m.name} ({m.display_relation?.split('/')[0].trim() || m.relation})
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ) : null}
+              </>
+            )}
 
             {/* Residence preview for late members */}
             {isDeceased ? (

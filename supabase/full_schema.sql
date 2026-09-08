@@ -107,6 +107,17 @@ ALTER TABLE IF EXISTS public.family_members ADD COLUMN IF NOT EXISTS blood_group
 ALTER TABLE IF EXISTS public.family_members ADD COLUMN IF NOT EXISTS birth_place TEXT;
 ALTER TABLE IF EXISTS public.family_members ADD COLUMN IF NOT EXISTS can_edit_family BOOLEAN DEFAULT false;
 
+-- Sync legacy is_deceased and deceased_date from occupation_details into columns
+UPDATE public.family_members
+SET is_deceased = true,
+    deceased_date = COALESCE(deceased_date, occupation_details->>'deceased_date')
+WHERE (occupation_details->>'is_deceased' = 'true' OR (occupation_details->'is_deceased')::text = 'true')
+  AND (is_deceased IS NOT TRUE OR deceased_date IS NULL);
+
+COMMENT ON COLUMN public.family_members.occupation_details IS 'Dynamic JSONB details for occupations (e.g. occupation_name, workplace_or_firm, work_location, notes for OTHER category, company_name/designation for EMPLOYEE, etc.)';
+COMMENT ON COLUMN public.family_members.can_edit_family IS 'Flags if this member is authorized to edit the family directory and reset password via email OTP';
+COMMENT ON COLUMN public.family_members.email IS 'Member recovery email ID used for password reset OTP and communication';
+
 -- 7. FAMILY RELATIONSHIPS TABLE
 CREATE TABLE IF NOT EXISTS public.family_relationships (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -282,9 +293,13 @@ CREATE POLICY "Allow update occupation" ON public.occupation_records FOR UPDATE 
 DROP POLICY IF EXISTS "Allow manage audit_logs" ON public.audit_logs;
 CREATE POLICY "Allow manage audit_logs" ON public.audit_logs FOR ALL USING (true);
 
--- 14. PHOTO STORAGE: CLOUDINARY INTEGRATION & SUPABASE BUCKET CLEANUP
--- Member profile pictures are now uploaded and served directly via Cloudinary CDN (Preset: 'family_members', Folder: 'home/family_members').
--- The CDN URL is saved directly in public.family_members.photo_url.
+-- 14. PHOTO STORAGE: CLOUDINARY CDN INTEGRATION & STORAGE CLEANUP
+-- Member profile pictures are securely uploaded and served directly via Cloudinary CDN.
+-- Features:
+--   - Signed uploads using SHA-1 signature with API Key & Secret for authorized byte overwrites.
+--   - In-place overwrite (public_id: member_<id>) without creating duplicate files on Cloudinary.
+--   - Programmatic auto-deletion of removed photos and deleted members via Cloudinary Destroy API.
+--   - The CDN URL is stored directly in public.family_members.photo_url.
 -- Legacy Supabase 'member-photos' storage bucket and its policies are cleaned up below:
 
 -- 14.1 Drop legacy Supabase storage policies
@@ -297,8 +312,9 @@ DROP POLICY IF EXISTS "Allow photo deletes in member-photos" ON storage.objects;
 DELETE FROM storage.objects WHERE bucket_id = 'member-photos';
 DELETE FROM storage.buckets WHERE id = 'member-photos';
 
--- 14.3 (Optional Migration Helper) Clear old Supabase photo URLs so members can upload fresh Cloudinary avatars:
+-- 14.3 (Optional Migration Helpers) Clear old legacy storage or local device URIs:
 -- UPDATE public.family_members SET photo_url = NULL WHERE photo_url LIKE '%supabase.co/storage%';
+-- UPDATE public.family_members SET photo_url = NULL WHERE photo_url LIKE 'file://%';
 
 -- 15. RPC: PERMANENT ACCOUNT & FAMILY DELETION
 CREATE OR REPLACE FUNCTION public.delete_user_account()

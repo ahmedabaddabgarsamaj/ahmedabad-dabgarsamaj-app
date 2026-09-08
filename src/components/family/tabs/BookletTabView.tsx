@@ -20,6 +20,7 @@ import { FamilyBookletDetailModal } from '@/components/booklet/FamilyBookletDeta
 import { Card } from '@/components/ui/Card';
 import { BookletScreenSkeleton } from '@/components/ui/Skeleton';
 import { exportCommunityDirectoryAsPdf, printCommunityDirectoryDirectly } from '@/lib/utils/exportPdf';
+import { exportCommunityDirectoryAsExcel } from '@/lib/utils/exportExcel';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface BookletTabViewProps {
@@ -46,6 +47,7 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
   // Deep detail modal state
   const [selectedBookletItem, setSelectedBookletItem] = useState<CommunityFamilyBookletItem | null>(null);
   const [exportingDir, setExportingDir] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
 
   const handleExportDirectoryPdf = async () => {
     if (families.length === 0) return;
@@ -59,6 +61,20 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
       }))
     );
     setExportingDir(false);
+  };
+
+  const handleExportDirectoryExcel = async () => {
+    if (families.length === 0) return;
+    setExportingExcel(true);
+    await exportCommunityDirectoryAsExcel(
+      families.map((f) => ({
+        ...f.family,
+        members: f.members,
+        head_name: f.headMember?.name,
+        area_name: f.family.area?.name,
+      }))
+    );
+    setExportingExcel(false);
   };
 
   const handlePrintDirectory = async () => {
@@ -200,7 +216,7 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
                 </Card>
               ) : null}
 
-              {/* Community PDF Export & Print Bar */}
+              {/* Community PDF, Excel & Print Bar */}
               {families.length > 0 ? (
                 <View style={styles.communityExportBar}>
                   <TouchableOpacity
@@ -209,9 +225,21 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
                     disabled={exportingDir}
                     style={[styles.communityExportBtn, { backgroundColor: theme.primary }]}
                   >
-                    <Ionicons name="document-text" size={16} color="#FFFFFF" />
+                    <Ionicons name="document-text" size={15} color="#FFFFFF" />
                     <Text style={styles.communityExportBtnText}>
-                      {exportingDir ? 'Generating PDF...' : `📄 Export Directory PDF (${families.length})`}
+                      {exportingDir ? 'PDF...' : '📄 PDF'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleExportDirectoryExcel}
+                    disabled={exportingExcel}
+                    style={[styles.communityExportBtn, { backgroundColor: '#059669' }]}
+                  >
+                    <Ionicons name="grid" size={15} color="#FFFFFF" />
+                    <Text style={styles.communityExportBtnText}>
+                      {exportingExcel ? 'Excel...' : '📊 Excel'}
                     </Text>
                   </TouchableOpacity>
 
@@ -220,7 +248,7 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
                     onPress={handlePrintDirectory}
                     style={[styles.communityPrintBtn, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]}
                   >
-                    <Ionicons name="print" size={16} color={theme.primary} />
+                    <Ionicons name="print" size={15} color={theme.primary} />
                     <Text style={[styles.communityPrintBtnText, { color: theme.primary }]}>
                       🖨️ Print
                     </Text>

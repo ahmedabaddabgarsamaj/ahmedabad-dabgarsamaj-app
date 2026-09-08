@@ -161,8 +161,8 @@ export default function MemberDetailScreen() {
       setMember({ ...member, can_edit_family: true, email: cleanEmail });
       setPermissionModalVisible(false);
       Alert.alert(
-        'પરવાનગી અપડેટ થઈ / Permission Granted',
-        `${member.name} ને પરિવાર એડિટ કરવાની પરવાનગી સફળતાપૂર્વક આપવામાં આવી છે.\n\nતેઓ તેમના મોબાઈલ નંબર અથવા ઈમેઈલ (${cleanEmail}) અને તમારા પરિવારના મૂળ પાસવર્ડ વડે પણ સીધા જ એપમાં લૉગિન કરી શકશે.`
+        'ઈમેઈલ અપડેટ થયો / Email Saved',
+        `${member.name} નો રિકવરી ઈમેઈલ (${cleanEmail}) સફળતાપૂર્વક સાચવવામાં આવ્યો છે.\n\nભવિષ્યમાં પાસવર્ડ રીસેટ કરવા માટેનો ૮ આંકડાનો OTP આ ઈમેઈલ પર મોકલવામાં આવશે.`
       );
     }
   };
@@ -170,22 +170,22 @@ export default function MemberDetailScreen() {
   const handleRevokePermission = () => {
     if (!member) return;
     Alert.alert(
-      'Revoke Permission / પરવાનગી રદ કરો',
-      `શું તમે ${member.name} ની પરિવાર એડિટ કરવાની પરવાનગી પાછી ખેંચવા માંગો છો?`,
+      'Remove Email / ઈમેઈલ હટાવો',
+      `શું તમે ${member.name} નો રિકવરી ઈમેઈલ હટાવવા માંગો છો?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'હા, રદ કરો',
+          text: 'હા, હટાવો',
           style: 'destructive',
           onPress: async () => {
             setTogglingPermission(true);
-            const res = await membersService.toggleEditPermission(member.id, false, member.email);
+            const res = await membersService.toggleEditPermission(member.id, false, null);
             setTogglingPermission(false);
             if (res.error) {
               Alert.alert('Error', res.error);
             } else {
-              setMember({ ...member, can_edit_family: false });
-              Alert.alert('Updated / અપડેટ થયું', `${member.name} ની એડિટ પરવાનગી રદ કરવામાં આવી છે.`);
+              setMember({ ...member, can_edit_family: false, email: null });
+              Alert.alert('Updated / અપડેટ થયું', `${member.name} નો રિકવરી ઈમેઈલ હટાવી દીધો છે.`);
             }
           },
         },
@@ -345,44 +345,44 @@ export default function MemberDetailScreen() {
           </View>
         </Card>
 
-        {/* Family Head Permission Control Card (Only visible to Family Head for other living members) */}
+        {/* Member Recovery Email Card (For Password Reset OTP) */}
         {isOwnFamily && isViewerHead && member.relation !== 'FAMILY_HEAD' && !member.is_deceased ? (
           <Card
             style={[
               styles.permissionCard,
               {
-                backgroundColor: member.can_edit_family ? '#ECFDF5' : theme.card,
-                borderColor: member.can_edit_family ? '#10B981' : theme.border,
+                backgroundColor: (member.email || member.can_edit_family) ? '#ECFDF5' : theme.card,
+                borderColor: (member.email || member.can_edit_family) ? '#10B981' : theme.border,
               },
             ]}
           >
             <View style={styles.permissionHeader}>
-              <View style={[styles.permissionIconCircle, { backgroundColor: member.can_edit_family ? '#D1FAE5' : theme.backgroundElement }]}>
+              <View style={[styles.permissionIconCircle, { backgroundColor: (member.email || member.can_edit_family) ? '#D1FAE5' : theme.backgroundElement }]}>
                 <Ionicons
-                  name={member.can_edit_family ? 'shield-checkmark' : 'shield-outline'}
+                  name={(member.email || member.can_edit_family) ? 'mail' : 'mail-outline'}
                   size={24}
-                  color={member.can_edit_family ? '#059669' : theme.textSecondary}
+                  color={(member.email || member.can_edit_family) ? '#059669' : theme.textSecondary}
                 />
               </View>
 
               <View style={styles.permissionInfo}>
                 <Text style={[styles.permissionTitle, { color: theme.text }]}>
-                  પરિવાર એડિટ પરવાનગી (Edit Access)
+                  સભ્ય રિકવરી ઈમેઈલ (Password Reset & OTP)
                 </Text>
                 <Text style={[styles.permissionSubtitle, { color: theme.textSecondary }]}>
-                  {member.can_edit_family
-                    ? `${member.name} પરિવારના સભ્યો ઉમેરી અને સુધારી શકે છે.`
-                    : `${member.name} ને પરિવાર એડિટ કરવાની પરવાનગી આપો.`}
+                  {(member.email || member.can_edit_family)
+                    ? `પાસવર્ડ ભૂલી જવાના કિસ્સામાં ૮ આંકડાનો OTP આ ઈમેઈલ પર મોકલવામાં આવશે.`
+                    : `${member.name} માટે ઈમેઈલ ઉમેરો જેથી ભવિષ્યમાં પાસવર્ડ રીસેટ OTP મેળવી શકાય.`}
                 </Text>
               </View>
             </View>
 
-            {member.can_edit_family ? (
+            {(member.email || member.can_edit_family) ? (
               <View style={[styles.authorizedEmailBox, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="mail" size={16} color="#15803D" style={{ marginRight: 6 }} />
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803D' }}>
-                    ઓથોરાઇઝ્ડ ઈમેઈલ (Authorized Email):
+                    નોંધાયેલ ઈમેઈલ (Recovery Email):
                   </Text>
                 </View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#166534', marginTop: 3 }}>
@@ -395,7 +395,7 @@ export default function MemberDetailScreen() {
             ) : null}
 
             <View style={{ marginTop: 12 }}>
-              {member.can_edit_family ? (
+              {(member.email || member.can_edit_family) ? (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Button
                     title="ઈમેઈલ બદલો / Edit Email"
@@ -404,7 +404,7 @@ export default function MemberDetailScreen() {
                     style={{ flex: 1 }}
                   />
                   <Button
-                    title="પરવાનગી રદ કરો"
+                    title="ઈમેઈલ હટાવો"
                     variant="danger"
                     loading={togglingPermission}
                     onPress={handleRevokePermission}
@@ -413,7 +413,7 @@ export default function MemberDetailScreen() {
                 </View>
               ) : (
                 <Button
-                  title="પરવાનગી આપો / Grant Edit Access"
+                  title="ઈમેઈલ આઈડી ઉમેરો / Add Recovery Email"
                   variant="primary"
                   loading={togglingPermission}
                   onPress={openPermissionModal}
@@ -638,8 +638,46 @@ export default function MemberDetailScreen() {
 
             {/* Render extra dynamic key-values from occupation details */}
             {Object.entries(occDetails).map(([k, v]) => {
-              if (!v || ['organization_name', 'designation', 'business_name', 'work_location'].includes(k)) return null;
-              const formattedKey = k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+              if (
+                !v ||
+                [
+                  'organization_name',
+                  'designation',
+                  'business_name',
+                  'work_location',
+                  'is_deceased',
+                  'deceased_date',
+                  'blood_group',
+                  'birth_place',
+                  'dob_unknown',
+                  'email',
+                  'can_edit_family',
+                ].includes(k)
+              )
+                return null;
+
+              const labelMap: Record<string, string> = {
+                occupation_name: 'વ્યવસાયનું નામ / Work Name',
+                workplace_or_firm: 'પેઢી કે સંસ્થા / Workplace',
+                work_location: 'કાર્યનું સ્થળ / Work Location',
+                notes: 'અન્ય વિગત / Notes',
+                details: 'અન્ય વિગત / Details',
+                company_name: 'કંપનીનું નામ / Company Name',
+                business_name: 'બિઝનેસનું નામ / Business Name',
+                shop_name: 'દુકાનનું નામ / Shop Name',
+                practice_name: 'સંસ્થા કે ક્લિનિક / Practice Name',
+                work_description: 'કામનો પ્રકાર / Work Nature',
+                specialization: 'વિશેષતા / Specialization',
+                experience_years: 'અનુભવ (વર્ષ) / Experience',
+                school_or_college: 'શાળા / કોલેજ / Institution',
+                current_year_or_std: 'ચાલુ વર્ષ કે ધોરણ / Standard',
+                previous_organization: 'નિવૃત્ત સંસ્થા / Retired From',
+              };
+
+              const formattedKey =
+                labelMap[k] ||
+                k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
               return (
                 <View key={k} style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
@@ -748,26 +786,26 @@ export default function MemberDetailScreen() {
             <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.modalHeader}>
                 <View style={[styles.modalIconCircle, { backgroundColor: '#ECFDF5' }]}>
-                  <Ionicons name="shield-checkmark" size={28} color="#10B981" />
+                  <Ionicons name="mail" size={28} color="#10B981" />
                 </View>
                 <Text style={[styles.modalTitle, { color: theme.text }]}>
-                  {member?.can_edit_family ? 'ઓથોરાઇઝ્ડ ઈમેઈલ અપડેટ કરો' : 'એડિટ પરવાનગી આપો'}
+                  {(member?.email || member?.can_edit_family) ? 'રિકવરી ઈમેઈલ અપડેટ કરો' : 'રિકવરી ઈમેઈલ સેટ કરો'}
                 </Text>
                 <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-                  {member?.name} પરિવારની વિગતો સુધારી શકશે
+                  {member?.name} ના પાસવર્ડ રીસેટ અને એકાઉન્ટ રિકવરી માટે
                 </Text>
               </View>
 
               <View style={[styles.modalNoticeBox, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
                 <Ionicons name="information-circle" size={18} color="#1D4ED8" style={{ marginRight: 6 }} />
                 <Text style={[styles.modalNoticeText, { color: '#1E40AF' }]}>
-                  સભ્યનો ઈમેઈલ આઈડી દાખલ કરો જેથી ભવિષ્યમાં પાસવર્ડ રીસેટ કરતી વખતે OTP સીધો આ ઈમેઈલ પર મેળવી શકાય.
+                  સભ્યનો ઈમેઈલ આઈડી દાખલ કરો જેથી ભવિષ્યમાં પાસવર્ડ રીસેટ કરતી વખતે ૮ આંકડાનો સુરક્ષિત OTP સીધો આ ઈમેઈલ પર મેળવી શકાય.
                 </Text>
               </View>
 
               <View style={{ marginTop: 16 }}>
                 <Input
-                  label="સભ્યનો Email ID (Member Email)"
+                  label="સભ્યનો Recovery Email ID"
                   placeholder="e.g. member@gmail.com"
                   value={permissionEmail}
                   onChangeText={(text) => {
@@ -788,7 +826,7 @@ export default function MemberDetailScreen() {
                   style={{ flex: 1 }}
                 />
                 <Button
-                  title={member?.can_edit_family ? 'સાચવો / Save' : 'પરવાનગી આપો'}
+                  title="ઈમેઈલ સાચવો / Save Email"
                   variant="primary"
                   loading={togglingPermission}
                   onPress={handleGrantPermission}

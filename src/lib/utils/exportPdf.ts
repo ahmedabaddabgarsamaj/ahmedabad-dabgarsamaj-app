@@ -52,6 +52,7 @@ function formatPdfOccupation(m: FamilyMember): string {
     occRec.organization_name ||
     occRec.business_name ||
     details.company_name ||
+    details.workplace_or_firm ||
     details.business_name ||
     details.shop_name ||
     details.practice_name ||
@@ -61,10 +62,27 @@ function formatPdfOccupation(m: FamilyMember): string {
     details.previous_organization ||
     '';
 
-  const role = occRec.designation || details.designation || details.profession || details.current_year_or_std || details.business_type || details.shop_type || '';
-  const loc = occRec.work_location || details.work_location || details.business_location || details.shop_location || details.village_or_taluka || '';
+  const role =
+    occRec.designation ||
+    details.occupation_name ||
+    details.designation ||
+    details.profession ||
+    details.current_year_or_std ||
+    details.business_type ||
+    details.shop_type ||
+    '';
 
-  const detailsList = [orgName, role, loc].filter(Boolean);
+  const loc =
+    occRec.work_location ||
+    details.work_location ||
+    details.business_location ||
+    details.shop_location ||
+    details.village_or_taluka ||
+    '';
+
+  const notes = details.notes || details.details || '';
+
+  const detailsList = [orgName, role, loc, notes].filter(Boolean);
   if (detailsList.length > 0) {
     return `<div style="font-weight:600; font-size:8.5px; line-height:1.2;">${occDisplay}</div><div style="color:#475569; font-size:7.5px; line-height:1.15; margin-top:1px;">${detailsList.join(' • ')}</div>`;
   }

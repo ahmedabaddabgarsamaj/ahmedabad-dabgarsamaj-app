@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { EducationRecord, FamilyMember, OccupationRecord } from '@/types/database';
 import { calculateAge, formatDate, formatDateForDB, isDummyDOB } from '@/lib/utils/date';
 import { getRelationshipDisplay } from '@/constants/relationships';
+import { imageService } from '@/lib/storage/imageService';
 
 export interface AddMemberInput {
   family_id: string;
@@ -42,6 +43,7 @@ export function mapOccupationFields(type?: string | null, details?: Record<strin
   const d = details || {};
 
   const organization_name =
+    d.workplace_or_firm ||
     d.company_name ||
     d.practice_name ||
     d.school_or_college ||
@@ -49,6 +51,7 @@ export function mapOccupationFields(type?: string | null, details?: Record<strin
     null;
 
   const designation =
+    d.occupation_name ||
     d.designation ||
     d.profession ||
     d.specialization ||
@@ -64,6 +67,8 @@ export function mapOccupationFields(type?: string | null, details?: Record<strin
     d.business_type ||
     d.shop_type ||
     d.work_description ||
+    d.notes ||
+    d.details ||
     null;
 
   const work_location =
@@ -512,6 +517,16 @@ export const membersService = {
         await supabase.from('education_records').delete().eq('family_member_id', memberId);
         await supabase.from('occupation_records').delete().eq('family_member_id', memberId);
         await supabase.from('family_relationships').delete().or(`from_member_id.eq.${memberId},to_member_id.eq.${memberId}`);
+
+        // Fetch photo_url to automatically clean up from Cloudinary
+        const { data: memberData } = await supabase
+          .from('family_members')
+          .select('photo_url')
+          .eq('id', memberId)
+          .single();
+        if (memberData?.photo_url) {
+          imageService.deleteMemberPhoto(memberData.photo_url).catch(() => {});
+        }
 
         // Permanently delete the member row from DB
         const { error: delErr } = await supabase

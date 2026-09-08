@@ -117,16 +117,24 @@ export default function HeadProfileScreen() {
     setSaving(true);
 
     let finalPhotoUrl = photoUrl;
-    if (photoUrl && (photoBase64 || photoUrl.startsWith('blob:') || photoUrl.startsWith('data:') || photoUrl.startsWith('file:') || photoUrl.startsWith('ph:'))) {
+    if (!photoUrl && headMember.photo_url) {
+      // Photo was removed from UI -> delete from Cloudinary
+      await imageService.deleteMemberPhoto(headMember.photo_url);
+      finalPhotoUrl = null;
+    } else if (photoUrl && !photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
       const uploadRes = await imageService.uploadMemberPhoto({
         uri: photoUrl,
         base64: photoBase64,
         familyId: family.id,
+        memberId: headMember.id,
+        currentPhotoUrl: headMember.photo_url,
         headName: name,
         memberName: name,
       });
       if (uploadRes.error) {
+        setSaving(false);
         Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
+        return;
       }
       finalPhotoUrl = uploadRes.url;
     }

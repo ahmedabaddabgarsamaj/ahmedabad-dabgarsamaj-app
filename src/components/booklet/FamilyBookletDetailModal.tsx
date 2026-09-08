@@ -163,7 +163,7 @@ export function FamilyBookletDetailModal({
               disabled={exportingPdf}
               style={[styles.headerPdfBtn, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}
             >
-              <Ionicons name="document-text-outline" size={15} color={theme.primary} />
+              <Ionicons name="document-text-outline" size={14} color={theme.primary} />
               <Text style={[styles.headerPdfBtnText, { color: theme.primary }]}>
                 {exportingPdf ? '...' : 'PDF'}
               </Text>
@@ -174,7 +174,7 @@ export function FamilyBookletDetailModal({
               onPress={handlePrint}
               style={[styles.headerPdfBtn, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
             >
-              <Ionicons name="print-outline" size={15} color={theme.text} />
+              <Ionicons name="print-outline" size={14} color={theme.text} />
               <Text style={[styles.headerPdfBtnText, { color: theme.text }]}>Print</Text>
             </TouchableOpacity>
 
@@ -305,10 +305,11 @@ export function FamilyBookletDetailModal({
               const occ = m.occupationRecord;
               const d = m.occupation_details || {};
 
-              const orgName = occ?.organization_name || occ?.business_name || d.company_name || d.shop_name || d.business_name || d.practice_name || d.school_or_college;
-              const roleName = occ?.designation || d.designation || d.profession || d.specialization || d.current_year_or_std;
+              const orgName = occ?.organization_name || occ?.business_name || d.workplace_or_firm || d.company_name || d.shop_name || d.business_name || d.practice_name || d.school_or_college;
+              const roleName = occ?.designation || d.occupation_name || d.designation || d.profession || d.specialization || d.current_year_or_std;
               const workCity = occ?.work_location || d.work_location || d.business_location || d.shop_location || d.village_or_taluka;
               const expYears = occ?.experience_years || d.experience_years;
+              const notes = d.notes || d.details;
 
               return (
                 <TouchableOpacity
@@ -499,6 +500,17 @@ export function FamilyBookletDetailModal({
                             </Text>
                             <Text style={[styles.detailValue, { color: theme.text }]}>
                               ⏳ {expYears} Years
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {notes ? (
+                          <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                              અન્ય વિગત / Notes:
+                            </Text>
+                            <Text style={[styles.detailValue, { color: theme.text }]}>
+                              📝 {notes}
                             </Text>
                           </View>
                         ) : null}

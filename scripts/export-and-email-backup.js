@@ -30,16 +30,59 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper to calculate age from DOB (or age at death for deceased members)
+function isDummyDOB(dobString) {
+  if (!dobString || typeof dobString !== 'string') return true;
+  const trimmed = dobString.trim();
+  return (
+    trimmed === '' ||
+    trimmed === '1900-01-01' ||
+    trimmed === '01-01-1900' ||
+    trimmed.startsWith('1900-01-01')
+  );
+}
+
+function parseDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') return null;
+  const trimmed = dateString.trim();
+  if (isDummyDOB(trimmed)) return null;
+
+  // Match DD-MM-YYYY or DD/MM/YYYY
+  const ddmmyyyyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const day = parseInt(ddmmyyyyMatch[1], 10);
+    const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
+    const year = parseInt(ddmmyyyyMatch[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // Match 4-digit year e.g. "1990" or "2017"
+  const yyyyMatch = trimmed.match(/^(\d{4})$/);
+  if (yyyyMatch) {
+    const year = parseInt(yyyyMatch[1], 10);
+    return new Date(year, 0, 1);
+  }
+
+  // Fallback to standard ISO / YYYY-MM-DD
+  const standardDate = new Date(trimmed);
+  if (!isNaN(standardDate.getTime())) {
+    return standardDate;
+  }
+
+  return null;
+}
+
+// Helper to calculate age from DOB (or age at demise for deceased members)
 function calculateAge(dobString, deceasedDateString) {
-  if (!dobString) return '';
-  const dob = new Date(dobString);
-  if (isNaN(dob.getTime())) return '';
-  const endDate = deceasedDateString ? new Date(deceasedDateString) : null;
-  const end = (endDate && !isNaN(endDate.getTime())) ? endDate : new Date();
-  let age = end.getFullYear() - dob.getFullYear();
-  const m = end.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && end.getDate() < dob.getDate())) {
+  const birthDate = parseDate(dobString);
+  if (!birthDate) return '';
+
+  const endDate = deceasedDateString ? parseDate(deceasedDateString) : new Date();
+  if (!endDate) return '';
+
+  let age = endDate.getFullYear() - birthDate.getFullYear();
+  const m = endDate.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && endDate.getDate() < birthDate.getDate())) {
     age--;
   }
   return age >= 0 ? age : '';
@@ -107,6 +150,7 @@ function extractOccupationInfo(m, primaryOcc = {}) {
     primaryOcc.organization_name ||
     primaryOcc.business_name ||
     details.company_name ||
+    details.workplace_or_firm ||
     details.business_name ||
     details.shop_name ||
     details.practice_name ||
@@ -118,6 +162,7 @@ function extractOccupationInfo(m, primaryOcc = {}) {
 
   const desig =
     primaryOcc.designation ||
+    details.occupation_name ||
     details.designation ||
     details.profession ||
     details.current_year_or_std ||
@@ -127,6 +172,8 @@ function extractOccupationInfo(m, primaryOcc = {}) {
     primaryOcc.business_type ||
     details.business_type ||
     details.shop_type ||
+    details.notes ||
+    details.details ||
     '';
 
   const workLoc =
@@ -142,7 +189,9 @@ function extractOccupationInfo(m, primaryOcc = {}) {
     details.experience_years ||
     '';
 
-  return { occType, orgName, desig, businessType, workLoc, exp };
+  const notes = details.notes || details.details || '';
+
+  return { occType, orgName, desig, businessType, workLoc, exp, notes };
 }
 
 function formatResidence(resType) {
@@ -213,6 +262,9 @@ async function buildExcelFile() {
   function makeHyperlink(url, label) {
     if (!url || typeof url !== 'string' || !url.trim()) return '';
     const cleanUrl = url.trim();
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      return '';
+    }
     const safeLabel = label || 'લિંક ખોલો (Open Link)';
     const escapedUrl = cleanUrl.replace(/"/g, '""');
     const escapedLabel = safeLabel.replace(/"/g, '""');
@@ -261,16 +313,19 @@ async function buildExcelFile() {
         ? [m.separate_address, m.separate_city, m.separate_pincode].filter(Boolean).join(', ')
         : '';
 
-      const memberDemiseDate = m.is_deceased ? (m.deceased_date || m.occupation_details?.deceased_date) : null;
+      const isMemDeceased = m.is_deceased === true || m.status === 'DECEASED' || m.occupation_details?.is_deceased === true;
+      const memberDemiseDate = isMemDeceased ? (m.deceased_date || m.occupation_details?.deceased_date) : null;
+      const cardLink = (!isMemDeceased && cardUrl) ? makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)') : '';
+      const photoLink = makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)');
 
       bookletRows.push([
         fam.family_code, formatRelation(m.relation), m.name, m.gender || '', m.dob || '', calculateAge(m.dob, memberDemiseDate),
         m.blood_group || '', m.birth_place || '', m.mobile || '', memberEmail, course, inst, eduStat,
         occType, orgName, desig, workLoc, exp,
         formatResidence(m.residence_type), fam.address, fam.city, fam.pincode, sepAddr,
-        m.is_deceased ? 'સ્વર્ગસ્થ' : 'હયાત', m.deceased_date || '', m.can_edit_family ? 'હા (Yes)' : 'ના (No)',
-        makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
-        makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
+        isMemDeceased ? 'સ્વર્ગસ્થ' : 'હયાત', memberDemiseDate || '', m.can_edit_family ? 'હા (Yes)' : 'ના (No)',
+        photoLink,
+        cardLink
       ]);
     });
 
@@ -351,7 +406,7 @@ async function buildExcelFile() {
     'અવસાન સમયે ઉંમર (Age at Demise)',
     'પરિવારના વડાનું નામ (Family Head)', 'વડાનો મોબાઈલ (Head Contact)',
     'પરિવારનું સરનામું (Address)', 'શહેર (City)',
-    'સ્વર્ગસ્થનો ફોટો (Late Photo)', 'ડિજિટલ કાર્ડ (Digital Card)'
+    'સ્વર્ગસ્થનો ફોટો (Late Photo)'
   ]];
 
   lateMembers.forEach((m, idx) => {
@@ -359,14 +414,12 @@ async function buildExcelFile() {
     const famMembers = membersByFamily.get(fam.id) || [];
     const head = famMembers.find(fm => fm.relation === 'FAMILY_HEAD' && !isDeceased(fm)) || famMembers.find(fm => fm.relation === 'FAMILY_HEAD') || famMembers[0] || {};
     const demiseDate = m.deceased_date || m.occupation_details?.deceased_date || '';
-    const cardUrl = fam.family_code ? `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}` : '';
 
     lateMemberRows.push([
       idx + 1, fam.family_code || '', m.name, formatRelation(m.relation), m.gender || '', m.dob || '',
       demiseDate, calculateAge(m.dob, demiseDate),
       head.name || 'N/A', head.mobile || '', fam.address || '', fam.city || '',
-      makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)'),
-      makeHyperlink(cardUrl, 'કાર્ડ જુઓ (View Card)')
+      makeHyperlink(m.photo_url, 'ફોટો જુઓ (View Photo)')
     ]);
   });
 

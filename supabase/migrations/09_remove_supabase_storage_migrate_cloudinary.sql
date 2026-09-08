@@ -18,3 +18,4 @@ DELETE FROM storage.buckets WHERE id = 'member-photos';
 
 -- 4. (Optional) Uncomment to reset old broken Supabase photo URLs in database:
 -- UPDATE public.family_members SET photo_url = NULL WHERE photo_url LIKE '%supabase.co/storage%';
+-- UPDATE public.family_members SET photo_url = NULL WHERE photo_url LIKE 'file://%';
