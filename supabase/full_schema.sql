@@ -282,31 +282,23 @@ CREATE POLICY "Allow update occupation" ON public.occupation_records FOR UPDATE 
 DROP POLICY IF EXISTS "Allow manage audit_logs" ON public.audit_logs;
 CREATE POLICY "Allow manage audit_logs" ON public.audit_logs FOR ALL USING (true);
 
--- 14. STORAGE BUCKET & POLICIES FOR MEMBER PHOTOS
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('member-photos', 'member-photos', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+-- 14. PHOTO STORAGE: CLOUDINARY INTEGRATION & SUPABASE BUCKET CLEANUP
+-- Member profile pictures are now uploaded and served directly via Cloudinary CDN (Preset: 'family_members', Folder: 'home/family_members').
+-- The CDN URL is saved directly in public.family_members.photo_url.
+-- Legacy Supabase 'member-photos' storage bucket and its policies are cleaned up below:
 
+-- 14.1 Drop legacy Supabase storage policies
 DROP POLICY IF EXISTS "Public can view member photos" ON storage.objects;
-CREATE POLICY "Public can view member photos"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'member-photos');
-
 DROP POLICY IF EXISTS "Allow photo uploads in member-photos" ON storage.objects;
-CREATE POLICY "Allow photo uploads in member-photos"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'member-photos');
-
 DROP POLICY IF EXISTS "Allow photo updates in member-photos" ON storage.objects;
-CREATE POLICY "Allow photo updates in member-photos"
-ON storage.objects FOR UPDATE
-USING (bucket_id = 'member-photos')
-WITH CHECK (bucket_id = 'member-photos');
-
 DROP POLICY IF EXISTS "Allow photo deletes in member-photos" ON storage.objects;
-CREATE POLICY "Allow photo deletes in member-photos"
-ON storage.objects FOR DELETE
-USING (bucket_id = 'member-photos');
+
+-- 14.2 Delete old objects and remove bucket to free Supabase storage quota
+DELETE FROM storage.objects WHERE bucket_id = 'member-photos';
+DELETE FROM storage.buckets WHERE id = 'member-photos';
+
+-- 14.3 (Optional Migration Helper) Clear old Supabase photo URLs so members can upload fresh Cloudinary avatars:
+-- UPDATE public.family_members SET photo_url = NULL WHERE photo_url LIKE '%supabase.co/storage%';
 
 -- 15. RPC: PERMANENT ACCOUNT & FAMILY DELETION
 CREATE OR REPLACE FUNCTION public.delete_user_account()
