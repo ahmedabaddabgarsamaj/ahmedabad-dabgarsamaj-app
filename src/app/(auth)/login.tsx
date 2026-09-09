@@ -46,7 +46,7 @@ export default function LoginScreen() {
     if (error) {
       setErrorMessage(error);
     } else {
-      router.replace('/');
+      router.replace('/(family)/home' as any);
     }
   };
 

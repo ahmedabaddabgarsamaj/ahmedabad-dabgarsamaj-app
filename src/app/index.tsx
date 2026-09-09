@@ -16,6 +16,9 @@ import {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// In-memory flag ensuring splash ONLY runs on initial app / website cold start
+let hasShownSessionSplash = false;
+
 export default function RootSplashScreen() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -29,7 +32,20 @@ export default function RootSplashScreen() {
   const welcomeFade = useRef(new Animated.Value(0)).current;
   const welcomeScale = useRef(new Animated.Value(0.85)).current;
 
+  // If splash was already shown in this session, skip 3-sec timer and redirect immediately
   useEffect(() => {
+    if (hasShownSessionSplash && !isLoading) {
+      if (!user) {
+        router.replace('/(auth)/login' as any);
+      } else {
+        router.replace('/(family)/home' as any);
+      }
+    }
+  }, [isLoading, user]);
+
+  useEffect(() => {
+    if (hasShownSessionSplash) return;
+
     // 1. Entrance animation: Logo pops in with spring
     Animated.parallel([
       Animated.spring(logoScale, {
@@ -86,11 +102,8 @@ export default function RootSplashScreen() {
       if (!isMounted) return;
       const elapsed = Date.now() - startTime;
       if (elapsed >= minSplashDuration && !isLoading) {
-        if (!user) {
-          router.replace('/(auth)/login' as any);
-        } else {
-          router.replace('/(family)/home' as any);
-        }
+        hasShownSessionSplash = true;
+        router.replace('/walkthrough' as any);
         return true;
       }
       return false;
@@ -107,6 +120,10 @@ export default function RootSplashScreen() {
       clearInterval(timer);
     };
   }, [isLoading, user]);
+
+  if (hasShownSessionSplash) {
+    return <View style={[styles.container, { backgroundColor: theme.background }]} />;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -50,6 +51,7 @@ export default function FamilyCardScreen() {
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [fullscreenTree, setFullscreenTree] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   // 2D Pan Scroll Refs
@@ -126,6 +128,7 @@ export default function FamilyCardScreen() {
       setMembers([]);
       setTreeData(null);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -141,6 +144,12 @@ export default function FamilyCardScreen() {
     }
 
     setLoading(false);
+    setRefreshing(false);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
   };
 
   useEffect(() => {
@@ -209,11 +218,20 @@ export default function FamilyCardScreen() {
       {/* Clean TopBar: installation prompt, profile and logout are hidden in QR scan mode */}
       <TopBar
         title={family.family_code ? `${family.family_code} - Family Card` : 'Digital Family Card'}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
         hideInstallButton={Boolean(targetCode)}
         hideActions={Boolean(targetCode)}
       />
 
-      <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={webScrollRef}
+        style={styles.bodyScroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+        }
+      >
         {/* Verification banner when viewed via QR code scan */}
         {targetCode ? (
           <View style={{ marginBottom: 12, padding: 10, borderRadius: 8, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', flexDirection: 'row', alignItems: 'center' }}>

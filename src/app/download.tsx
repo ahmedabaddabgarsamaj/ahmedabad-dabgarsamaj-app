@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
+import { getAppVersion } from '@/constants/version';
 import { useTheme } from '@/constants/theme';
 import { TopBar } from '@/components/navigation/TopBar';
 import { Card } from '@/components/ui/Card';
@@ -21,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function DownloadAppScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const appVersion = Constants.expoConfig?.version || '1.0.6';
+  const appVersion = getAppVersion();
 
   // State for PWA install prompt & status
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -36,7 +37,7 @@ export default function DownloadAppScreen() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
-      router.replace('/(family)/about' as any);
+      router.replace('/about' as any);
       return;
     }
 
@@ -53,18 +54,30 @@ export default function DownloadAppScreen() {
       const isInstalled =
         window.matchMedia('(display-mode: standalone)').matches ||
         (window.navigator as any).standalone === true;
-      setIsStandalone(isInstalled);
+      // Check early captured beforeinstallprompt
+      if ((window as any).deferredPWAInstallPrompt) {
+        setDeferredPrompt((window as any).deferredPWAInstallPrompt);
+      }
     }
 
     // Capture standard PWA install prompt (Chrome, Edge, Android)
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
+      (window as any).deferredPWAInstallPrompt = e;
       setDeferredPrompt(e);
     };
 
+    const handlePromptReady = () => {
+      if ((window as any).deferredPWAInstallPrompt) {
+        setDeferredPrompt((window as any).deferredPWAInstallPrompt);
+      }
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
     };
   }, []);
 
@@ -89,12 +102,19 @@ export default function DownloadAppScreen() {
   };
 
   const handleInstallPWA = () => {
+    const promptEvent =
+      deferredPrompt ||
+      (typeof window !== 'undefined' ? (window as any).deferredPWAInstallPrompt : null);
+
     // If native prompt is available (Android Chrome, Desktop Chrome/Edge)
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
+    if (promptEvent) {
+      promptEvent.prompt();
+      promptEvent.userChoice.then((choiceResult: any) => {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
           setIsStandalone(true);
+          if (typeof window !== 'undefined') {
+            (window as any).deferredPWAInstallPrompt = null;
+          }
         }
         setDeferredPrompt(null);
       });
@@ -114,7 +134,7 @@ export default function DownloadAppScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/(family)/about' as any);
+            router.replace('/about' as any);
           }
         }}
       />

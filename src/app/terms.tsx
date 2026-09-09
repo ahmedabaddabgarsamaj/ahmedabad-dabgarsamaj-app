@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/constants/theme';
 import { TopBar } from '@/components/navigation/TopBar';
 import { Card } from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function TermsAndConditionsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -26,7 +28,7 @@ export default function TermsAndConditionsScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/(family)/about' as any);
+            router.replace(user ? ('/(family)/home' as any) : ('/about' as any));
           }
         }}
       />
@@ -43,7 +45,7 @@ export default function TermsAndConditionsScreen() {
             નિયમો અને શરતો (Terms & Conditions)
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • છેલ્લે અપડેટ: ૦૫ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 05 September 2026)
+            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૦૯ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 09 September 2026)
           </Text>
         </Card>
 
@@ -123,7 +125,7 @@ export default function TermsAndConditionsScreen() {
 
         <View style={styles.footerNote}>
           <Text style={[styles.footerText, { color: theme.textMuted }]}>
-            © 2026 શ્રી અમદાવાદ ડબગર સમાજ. સર્વ અધિકાર સુરક્ષિત.
+            © 2026 શ્રી અમદાવાદ ડબગર સમાજ. સર્વ અધિકાર સુરક્ષિત • Version 1.0.7
           </Text>
         </View>
       </ScrollView>

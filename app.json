@@ -2,7 +2,7 @@
   "expo": {
     "name": "Dabgar Samaj",
     "slug": "dabgar-samaj-app",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -15,12 +15,12 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.dabgar.samajpustika",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "icon": "./assets/images/icon.png"
     },
     "android": {
       "package": "com.dabgar.samajpustika",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -25,9 +25,15 @@ import { Ionicons } from '@expo/vector-icons';
 
 export interface BookletTabViewProps {
   initialQuery?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
-export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
+export function BookletTabView({
+  initialQuery,
+  onRefresh: onRefreshProp,
+  refreshing: refreshingProp = false,
+}: BookletTabViewProps = {}) {
   const theme = useTheme();
 
   // Read initial query from props or fallback to browser URL search params
@@ -128,13 +134,18 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+    if (onRefreshProp) {
+      onRefreshProp();
+    }
   };
+
+  const isRefreshing = refreshing || refreshingProp;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header Search Bar */}
       <View style={[styles.filterSection, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <View style={[styles.searchBar, { backgroundColor: theme.backgroundElement, borderColor: theme.border, marginBottom: 4 }]}>
+        <View style={[styles.searchBar, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <Ionicons name="search" size={18} color={theme.textSecondary} style={{ marginRight: 4 }} />
           <TextInput
             placeholder="નામ, ફોન, બ્લડ ગ્રૂપ, ગામ કે વ્યવસાયથી શોધો..."
@@ -157,7 +168,7 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 40 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.primary]} />
           }
         >
           <BookletScreenSkeleton />
@@ -175,7 +186,7 @@ export function BookletTabView({ initialQuery }: BookletTabViewProps = {}) {
           )}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[theme.primary]} />
           }
           ListHeaderComponent={
             <>
@@ -299,7 +310,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   searchInput: {
     flex: 1,

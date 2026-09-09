@@ -25,6 +25,8 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(family)" />
+          <Stack.Screen name="about" />
+          <Stack.Screen name="walkthrough" />
           <Stack.Screen name="privacy" />
           <Stack.Screen name="terms" />
           <Stack.Screen name="download" />

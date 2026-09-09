@@ -73,8 +73,11 @@ export default function FamilyMasterScreen() {
     }
   }, [isAuthLoading, user?.id]);
 
+  const [bookletRefreshKey, setBookletRefreshKey] = useState(0);
+
   const onRefresh = () => {
     setRefreshing(true);
+    setBookletRefreshKey((prev) => prev + 1);
     loadData(user?.id);
   };
 
@@ -105,8 +108,12 @@ export default function FamilyMasterScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Permanent Persistent TopBar */}
-      <TopBar title={getTabTitle()} />
+      {/* Permanent Persistent TopBar with Active Tab Refresh */}
+      <TopBar
+        title={getTabTitle()}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
 
       {/* Main Active Tab Content View (Instant, Zero Page Reload) */}
       <View style={styles.tabContentContainer}>
@@ -121,21 +128,36 @@ export default function FamilyMasterScreen() {
         )}
 
         {activeTab === 'members' && (
-          <MembersTabView members={members} />
+          <MembersTabView
+            members={members}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
         )}
 
         {activeTab === 'booklet' && (
-          <BookletTabView />
+          <BookletTabView
+            key={bookletRefreshKey}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
         )}
 
         {activeTab === 'tree' && (
-          <TreeTabView family={family} treeData={treeData} />
+          <TreeTabView
+            family={family}
+            treeData={treeData}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
         )}
 
         {activeTab === 'card' && (
           <CardTabView
             family={family}
             members={members}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             onNavigateTab={(tab) => setActiveTab(tab)}
           />
         )}

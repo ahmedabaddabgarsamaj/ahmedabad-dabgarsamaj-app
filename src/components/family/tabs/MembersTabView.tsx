@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,9 +20,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 export interface MembersTabViewProps {
   members: FamilyMember[];
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
-export function MembersTabView({ members }: MembersTabViewProps) {
+export function MembersTabView({ members, refreshing = false, onRefresh }: MembersTabViewProps) {
   const router = useRouter();
   const theme = useTheme();
 
@@ -42,8 +45,16 @@ export function MembersTabView({ members }: MembersTabViewProps) {
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Top Search and Add row */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[theme.primary]} />
+        ) : undefined
+      }
+    >
+      {/* Top Search, Refresh and Add row */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Ionicons name="search" size={18} color={theme.textSecondary} />

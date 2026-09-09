@@ -1,5 +1,5 @@
-import React from 'react';
-import { Alert, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Alert, Animated, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -14,6 +14,8 @@ export interface TopBarProps {
   rightAction?: React.ReactNode;
   hideInstallButton?: boolean;
   hideActions?: boolean;
+  onRefresh?: () => void | Promise<void>;
+  refreshing?: boolean;
 }
 
 export function TopBar({
@@ -23,6 +25,8 @@ export function TopBar({
   rightAction,
   hideInstallButton = false,
   hideActions = false,
+  onRefresh,
+  refreshing = false,
 }: TopBarProps) {
   const router = useRouter();
   const { signOut, user } = useAuth();
@@ -30,6 +34,28 @@ export function TopBar({
   const insets = useSafeAreaInsets();
 
   const safeTop = Math.max(insets.top, 12);
+
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (refreshing) {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinValue.stopAnimation();
+      spinValue.setValue(0);
+    }
+  }, [refreshing]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
@@ -77,7 +103,7 @@ export function TopBar({
                 } else if (router.canGoBack()) {
                   router.back();
                 } else {
-                  router.replace((user ? '/(family)/home' : '/') as any);
+                  router.replace((user ? '/(family)/home' : '/(auth)/login') as any);
                 }
               }}
               style={[styles.backBtn, { backgroundColor: theme.backgroundElement }]}
@@ -92,7 +118,7 @@ export function TopBar({
         ) : (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push('/(family)/about' as any)}
+            onPress={() => router.push('/about' as any)}
             style={styles.brandHeaderSection}
           >
             <Image
@@ -117,25 +143,44 @@ export function TopBar({
             rightAction
           ) : hideActions ? null : (
             <View style={styles.actionButtonsRow}>
-              {/* Profile Icon Button */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => router.push('/(family)/profile' as any)}
-                style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
-                accessibilityLabel="My Profile"
-              >
-                <Ionicons name="person-circle-outline" size={22} color={theme.primary} />
-              </TouchableOpacity>
+              {/* Refresh Button */}
+              {onRefresh && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={onRefresh}
+                  disabled={refreshing}
+                  style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
+                  accessibilityLabel="Refresh page"
+                >
+                  <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                    <Ionicons name="refresh" size={19} color={theme.primary} />
+                  </Animated.View>
+                </TouchableOpacity>
+              )}
 
-              {/* Logout Button with working handler */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={handleLogout}
-                style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
-                accessibilityLabel="Log out"
-              >
-                <Ionicons name="log-out-outline" size={19} color={theme.error} />
-              </TouchableOpacity>
+              {/* Profile Icon Button - Logged in only */}
+              {user && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => router.push('/(family)/profile' as any)}
+                  style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
+                  accessibilityLabel="My Profile"
+                >
+                  <Ionicons name="person-circle-outline" size={22} color={theme.primary} />
+                </TouchableOpacity>
+              )}
+
+              {/* Logout Button with working handler - Logged in only */}
+              {user && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleLogout}
+                  style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
+                  accessibilityLabel="Log out"
+                >
+                  <Ionicons name="log-out-outline" size={19} color={theme.error} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>

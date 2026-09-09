@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { useTheme } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/features/auth/AuthContext';
 import {
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import {
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -24,7 +26,7 @@ export default function PrivacyPolicyScreen() {
           if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/(family)/about' as any);
+            router.replace(user ? ('/(family)/home' as any) : ('/about' as any));
           }
         }}
       />
@@ -41,7 +43,7 @@ export default function PrivacyPolicyScreen() {
             ગોપનીયતા નીતિ (Privacy Policy)
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • છેલ્લે અપડેટ: ૦૫ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 05 September 2026)
+            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૦૯ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 09 September 2026)
           </Text>
         </Card>
 
@@ -135,7 +137,7 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.footerNote}>
           <Text style={[styles.footerText, { color: theme.textMuted }]}>
-            © 2026 શ્રી અમદાવાદ ડબગર સમાજ. સર્વ અધિકાર સુરક્ષિત.
+            © 2026 શ્રી અમદાવાદ ડબગર સમાજ. સર્વ અધિકાર સુરક્ષિત • Version 1.0.7
           </Text>
         </View>
 

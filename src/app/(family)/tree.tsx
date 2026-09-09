@@ -35,6 +35,7 @@ export default function FamilyTreeScreen() {
   const [family, setFamily] = useState<Family | null>(null);
   const [treeData, setTreeData] = useState<TreeDataStructure | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [zoomScale, setZoomScale] = useState<number>(1);
@@ -46,6 +47,7 @@ export default function FamilyTreeScreen() {
       setFamily(null);
       setTreeData(null);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -53,6 +55,7 @@ export default function FamilyTreeScreen() {
     if (famRes.error) {
       setError(famRes.error);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -60,6 +63,7 @@ export default function FamilyTreeScreen() {
       setFamily(null);
       setTreeData(null);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -69,6 +73,12 @@ export default function FamilyTreeScreen() {
     const constructed = buildFamilyTree(famRes.members, relRes.relationships);
     setTreeData(constructed);
     setLoading(false);
+    setRefreshing(false);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadTree();
   };
 
   useEffect(() => {
@@ -120,6 +130,8 @@ export default function FamilyTreeScreen() {
       {/* TopBar with Export and Link buttons */}
       <TopBar
         title="Family Tree / ફેમિલી ટ્રી"
+        onRefresh={onRefresh}
+        refreshing={refreshing}
         rightAction={
           <View style={styles.topRightRow}>
             <TouchableOpacity

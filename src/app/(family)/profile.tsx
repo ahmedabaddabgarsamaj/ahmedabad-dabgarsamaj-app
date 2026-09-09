@@ -23,6 +23,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getAppVersion } from '@/constants/version';
 import { Input } from '@/components/ui/Input';
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -645,6 +646,22 @@ export default function HeadProfileScreen() {
             style={{ marginTop: 12 }}
           />
         </Card>
+
+        {/* App Version & About Link Footer */}
+        <View style={{ alignItems: 'center', marginTop: 18, marginBottom: 30 }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push('/about' as any)}
+            style={{ alignItems: 'center' }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: theme.textSecondary }}>
+              અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.primary, marginTop: 2 }}>
+              Version {getAppVersion()} • About Samaj & App →
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Permanent Account Deletion Modal */}

@@ -68,14 +68,14 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="ડબગર સમાજ" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#1d4ed8" />
-        <meta name="msapplication-TileColor" content="#1d4ed8" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
 
         {/* Favicons, Apple Touch Icons & Web Manifest */}
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
@@ -94,6 +94,24 @@ export default function Root({ children }: PropsWithChildren) {
               description: pageDescription,
               inLanguage: 'gu-IN',
             }),
+          }}
+        />
+
+        {/* Early PWA beforeinstallprompt capture script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.deferredPWAInstallPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.deferredPWAInstallPrompt = e;
+                window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+              });
+              window.addEventListener('appinstalled', function() {
+                window.deferredPWAInstallPrompt = null;
+                window.dispatchEvent(new CustomEvent('pwa-installed'));
+              });
+            `,
           }}
         />
 

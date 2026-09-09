@@ -34,16 +34,40 @@ export function PWAInstallButton() {
       /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(iOSCheck);
 
-    // Capture Chrome/Android beforeinstallprompt
+    // 1. Check if early beforeinstallprompt was already captured by head script
+    if ((window as any).deferredPWAInstallPrompt) {
+      setInstallPrompt((window as any).deferredPWAInstallPrompt);
+    }
+
+    // 2. Listen to custom event fired by early head script
+    const handlePromptReady = () => {
+      if ((window as any).deferredPWAInstallPrompt) {
+        setInstallPrompt((window as any).deferredPWAInstallPrompt);
+      }
+    };
+
+    // 3. Fallback direct beforeinstallprompt listener
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
+      (window as any).deferredPWAInstallPrompt = e;
       setInstallPrompt(e);
     };
 
+    // 4. Listen to appinstalled event
+    const handleAppInstalled = () => {
+      setIsStandalone(true);
+      setInstallPrompt(null);
+      (window as any).deferredPWAInstallPrompt = null;
+    };
+
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -53,11 +77,23 @@ export function PWAInstallButton() {
   }
 
   const handleInstallClick = async () => {
-    if (installPrompt) {
-      installPrompt.prompt();
-      const { outcome } = await installPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setInstallPrompt(null);
+    const promptEvent =
+      installPrompt ||
+      (typeof window !== 'undefined' ? (window as any).deferredPWAInstallPrompt : null);
+
+    if (promptEvent) {
+      try {
+        promptEvent.prompt();
+        const choiceResult = await promptEvent.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          setInstallPrompt(null);
+          if (typeof window !== 'undefined') {
+            (window as any).deferredPWAInstallPrompt = null;
+          }
+          setIsStandalone(true);
+        }
+      } catch (err) {
+        setShowModal(true);
       }
     } else {
       setShowModal(true);
@@ -69,11 +105,11 @@ export function PWAInstallButton() {
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={handleInstallClick}
-        style={[styles.installBtn, { backgroundColor: theme.primary }]}
+        style={[styles.installBtn, { backgroundColor: '#059669' }]}
         accessibilityLabel="Install App"
       >
-        <Ionicons name="download-outline" size={15} color="#ffffff" />
-        <Text style={styles.installBtnText}>Install App</Text>
+        <Ionicons name="cloud-download" size={14} color="#ffffff" />
+        <Text style={styles.installBtnText}>એપ ઇન્સ્ટોલ</Text>
       </TouchableOpacity>
 
       {/* iOS & Browser Instructions Modal */}
@@ -181,16 +217,26 @@ const styles = StyleSheet.create({
   installBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 20,
     marginRight: 6,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 10px rgba(5, 150, 105, 0.35)',
+        cursor: 'pointer',
+      },
+      default: {
+        elevation: 3,
+      },
+    }),
   },
   installBtnText: {
     color: '#ffffff',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   modalOverlay: {
     flex: 1,

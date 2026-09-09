@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +31,7 @@ export default function FamilyMembersListScreen() {
   const [family, setFamily] = useState<Family | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState<'ALL' | 'Male' | 'Female'>('ALL');
@@ -40,6 +42,7 @@ export default function FamilyMembersListScreen() {
       setFamily(null);
       setMembers([]);
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -51,6 +54,12 @@ export default function FamilyMembersListScreen() {
       setMembers(res.members);
     }
     setLoading(false);
+    setRefreshing(false);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
   };
 
   useEffect(() => {
@@ -82,6 +91,8 @@ export default function FamilyMembersListScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <TopBar
         title="Family Members / સભ્યો"
+        onRefresh={onRefresh}
+        refreshing={refreshing}
         rightAction={
           <TouchableOpacity
             activeOpacity={0.7}
@@ -94,7 +105,13 @@ export default function FamilyMembersListScreen() {
         }
       />
 
-      <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.bodyScroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
+        }
+      >
         {/* Search Input */}
         <Input
           placeholder="🔍 Search members by name, relation, education..."

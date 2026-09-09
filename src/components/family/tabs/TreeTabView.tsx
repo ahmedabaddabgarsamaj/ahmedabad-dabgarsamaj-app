@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   Alert,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,9 +25,11 @@ import { exportTreeAsImage } from '@/lib/utils/exportTree';
 export interface TreeTabViewProps {
   family: Family | null;
   treeData: TreeDataStructure | null;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
-export function TreeTabView({ family, treeData }: TreeTabViewProps) {
+export function TreeTabView({ family, treeData, onRefresh, refreshing = false }: TreeTabViewProps) {
   const router = useRouter();
   const theme = useTheme();
   const viewShotRef = useRef<any>(null);
@@ -116,6 +119,11 @@ export function TreeTabView({ family, treeData }: TreeTabViewProps) {
         contentContainerStyle={styles.canvasVerticalContent}
         maximumZoomScale={2}
         minimumZoomScale={0.5}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={refreshing || false} onRefresh={onRefresh} colors={[theme.primary]} />
+          ) : undefined
+        }
       >
         <ScrollView
           horizontal

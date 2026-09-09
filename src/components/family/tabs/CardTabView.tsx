@@ -8,9 +8,12 @@ import { exportFamilyIdCardAsPdf } from '@/lib/utils/exportPdf';
 import { Family, FamilyMember } from '@/types/database';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Animated,
   Image,
+  PanResponder,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,13 +26,61 @@ export interface CardTabViewProps {
   members: FamilyMember[];
   onNavigateTab: (tabId: 'home' | 'members' | 'tree' | 'card') => void;
   onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
-export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardTabViewProps) {
+export function CardTabView({ family, members, onNavigateTab, onRefresh, refreshing = false }: CardTabViewProps) {
   const router = useRouter();
   const theme = useTheme();
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [cardSide, setCardSide] = useState<'front' | 'back'>('front');
+  const cardSideRef = useRef<'front' | 'back'>(cardSide);
+  cardSideRef.current = cardSide;
+
+  const flipScale = useRef(new Animated.Value(1)).current;
+
+  const flipTo = (targetSide: 'front' | 'back') => {
+    if (targetSide === cardSideRef.current) return;
+
+    Animated.sequence([
+      Animated.timing(flipScale, {
+        toValue: 0.95,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+      Animated.timing(flipScale, {
+        toValue: 1,
+        duration: 130,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setCardSide(targetSide);
+  };
+
+  const toggleFlip = () => {
+    flipTo(cardSideRef.current === 'front' ? 'back' : 'front');
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Detect horizontal swipe while allowing normal vertical scrolling
+        return (
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.3 &&
+          Math.abs(gestureState.dx) > 12
+        );
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Swiping left or right flips the card
+        if (Math.abs(gestureState.dx) > 30 || Math.abs(gestureState.vx) > 0.25) {
+          toggleFlip();
+        }
+      },
+    })
+  ).current;
+
   const [downloading, setDownloading] = useState(false);
 
   if (!family) {
@@ -71,10 +122,18 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
   const femaleCount = livingMembers.filter((m) => m.gender === 'Female').length;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} colors={[theme.primary]} />
+        ) : undefined
+      }
+    >
       {/* Top Banner & Flip Control */}
       <View style={styles.headerBar}>
-        <View>
+        <View style={{ marginBottom: 12 }}>
           <Text style={[styles.screenTitle, { color: theme.text }]}>
             સત્તાવાર ડિજિટલ ઓળખપત્ર
           </Text>
@@ -87,7 +146,7 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
         <View style={[styles.flipSwitcher, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setCardSide('front')}
+            onPress={() => flipTo('front')}
             style={[
               styles.flipOption,
               cardSide === 'front' && { backgroundColor: theme.primary },
@@ -105,7 +164,7 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setCardSide('back')}
+            onPress={() => flipTo('back')}
             style={[
               styles.flipOption,
               cardSide === 'back' && { backgroundColor: theme.primary },
@@ -123,8 +182,18 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
         </View>
       </View>
 
-      {/* THE SMART ID CARD CONTAINER */}
-      <View style={[styles.idCardContainer, { backgroundColor: theme.card, borderColor: '#0284C7' }]}>
+      {/* THE SMART ID CARD CONTAINER with SWIPE GESTURE */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.idCardContainer,
+          {
+            backgroundColor: theme.card,
+            borderColor: '#0284C7',
+            transform: [{ scale: flipScale }],
+          },
+        ]}
+      >
         {/* Card Header: Deep Navy Gradient Style */}
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
@@ -261,7 +330,22 @@ export function CardTabView({ family, members, onNavigateTab, onRefresh }: CardT
             </View>
           </View>
         )}
-      </View>
+      </Animated.View>
+
+      {/* Swipe Gesture Hint Pill */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={toggleFlip}
+        style={[styles.swipeHintRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+      >
+        <Ionicons name="swap-horizontal" size={16} color={theme.primary} />
+        <Text style={[styles.swipeHintText, { color: theme.textSecondary }]}>
+          કાર્ડ પર ડાબે કે જમણે સ્વાઇપ (Swipe) કરીને સાઈડ બદલો •{' '}
+          <Text style={{ color: theme.primary, fontWeight: '700' }}>
+            {cardSide === 'front' ? '📋 Back જુઓ' : '🪪 Front જુઓ'}
+          </Text>
+        </Text>
+      </TouchableOpacity>
 
       {/* ACTION BUTTONS: Download, Share, Edit */}
       <View style={styles.actionsCard}>
@@ -355,7 +439,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 3,
     borderWidth: 1,
-    marginTop: 12,
   },
   flipOption: {
     flex: 1,
@@ -374,7 +457,23 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     boxShadow: '0px 8px 24px rgba(2, 132, 199, 0.12)',
     elevation: 4,
+    marginBottom: 12,
+  },
+  swipeHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignSelf: 'center',
     marginBottom: 16,
+  },
+  swipeHintText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   cardHeader: {
     backgroundColor: '#0F172A',
