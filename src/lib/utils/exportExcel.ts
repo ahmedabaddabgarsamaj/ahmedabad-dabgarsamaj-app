@@ -105,7 +105,7 @@ function formatOccupationType(occCode?: string | null): string {
   const map: Record<string, string> = {
     STUDENT: 'વિદ્યાર્થી (Student)',
     EMPLOYEE: 'નોકરી (Employee)',
-    BUSINESS_OWNER: 'વેપાર (Business Owner)',
+    BUSINESS_OWNER: 'દુકાનદાર (Shop Owner)',
     SHOP_OWNER: 'દુકાનદાર (Shop Owner)',
     PROFESSIONAL: 'પ્રોફેશનલ (Doctor/CA/Lawyer)',
     SELF_EMPLOYED: 'સ્વરોજગાર (Self Employed)',

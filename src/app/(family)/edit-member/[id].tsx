@@ -68,6 +68,7 @@ export default function EditMemberScreen() {
 
   const [dob, setDob] = useState('');
   const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [bloodGroup, setBloodGroup] = useState<string>('');
   const [birthPlace, setBirthPlace] = useState<string>('');
   const [relation, setRelation] = useState('');
@@ -105,15 +106,13 @@ export default function EditMemberScreen() {
 
         // Fetch relationships to see who this member is already connected with
         const relRes = await relationshipsService.getFamilyRelationships(famRes.family.id);
-        const existingRel = relRes.relationships.find(
+        const matchingRels = relRes.relationships.filter(
           (r) => r.from_member_id === id || r.to_member_id === id
         );
+        const existingRel = matchingRels.length > 0 ? matchingRels[matchingRels.length - 1] : null;
         if (existingRel) {
           const partnerId = existingRel.from_member_id === id ? existingRel.to_member_id : existingRel.from_member_id;
           setConnectedMemberId(partnerId);
-        } else if (others.length > 0) {
-          const head = others.find((m) => m.relation === 'FAMILY_HEAD');
-          setConnectedMemberId(head ? head.id : others[0].id);
         }
       }
 
@@ -146,6 +145,7 @@ export default function EditMemberScreen() {
         setDeceasedDate(m.deceased_date || '');
         setDob(formatDate(m.dob));
         setMobile(m.mobile || '');
+        setEmail(m.email || (m.occupation_details as any)?.email || '');
         setBloodGroup(m.blood_group || (m.occupation_details as any)?.blood_group || '');
         setBirthPlace(m.birth_place || (m.occupation_details as any)?.birth_place || '');
         setRelation(m.relation);
@@ -257,6 +257,7 @@ export default function EditMemberScreen() {
         dob: dob.trim() ? formatDateForDB(dob.trim()) : '',
         relation: isFamilyHead ? 'FAMILY_HEAD' : relation,
         mobile: isDeceased ? null : (mobile.trim() || null),
+        email: isDeceased ? null : (email.trim().toLowerCase() || null),
         blood_group: isDeceased ? null : (bloodGroup.trim() || null),
         birth_place: isDeceased ? null : (birthPlace.trim() || null),
         residence_type: isDeceased ? 'SAME_AS_FAMILY' : residenceType,
@@ -284,28 +285,17 @@ export default function EditMemberScreen() {
     );
 
     // Update relationship link if family exists (not applicable to Family Head)
-    if (!isFamilyHead && family && selectedRel && connectedMemberId) {
-      if (selectedRel.connectType === 'spouse_of') {
-        await relationshipsService.addRelationship(
+    if (!isFamilyHead && family) {
+      if (selectedRel && selectedRel.connectType && selectedRel.connectType !== 'none' && connectedMemberId) {
+        await relationshipsService.setMemberRelationship(
           family.id,
           id,
           connectedMemberId,
-          'SPOUSE'
+          selectedRel.connectType
         );
-      } else if (selectedRel.connectType === 'child_of') {
-        await relationshipsService.addRelationship(
-          family.id,
-          connectedMemberId,
-          id,
-          'PARENT'
-        );
-      } else if (selectedRel.connectType === 'parent_of') {
-        await relationshipsService.addRelationship(
-          family.id,
-          id,
-          connectedMemberId,
-          'PARENT'
-        );
+      } else {
+        // Clear previous relationships if relation has no connection or user removed connection
+        await relationshipsService.clearMemberRelationships(family.id, id);
       }
     }
 
@@ -366,7 +356,11 @@ export default function EditMemberScreen() {
               [
                 { id: 'basic', label: '1. Basic', icon: 'person' },
                 { id: 'education', label: '2. Education', icon: 'school' },
-                { id: 'occupation', label: '3. Occupation', icon: 'briefcase' },
+                {
+                  id: 'occupation',
+                  label: occupationType === 'STUDENT' ? '3. વિદ્યાર્થી' : '3. વ્યવસાય',
+                  icon: occupationType === 'STUDENT' ? 'school' : 'briefcase',
+                },
                 { id: 'residence', label: '4. Residence', icon: 'home' },
               ] as const
             ).map((tab) => (
@@ -525,6 +519,15 @@ export default function EditMemberScreen() {
             {!isDeceased && (
               <>
                 <Input label="Mobile Number / મોબાઈલ નંબર" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" />
+                <Input
+                  label="Email ID / ઈમેઈલ (મરજિયાત / Optional)"
+                  placeholder="e.g. name@gmail.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  helperText="રિકવરી અથવા સૂચનાઓ મેળવવા માટે ઈમેઈલ આઈડી"
+                />
 
                 {/* Blood Group Picker */}
                 <View style={styles.fieldGroup}>
@@ -611,9 +614,66 @@ export default function EditMemberScreen() {
                         key={r.code}
                         onPress={() => {
                           setRelation(r.code);
-                          if (!connectedMemberId && otherMembers.length > 0) {
-                            const head = otherMembers.find((m) => m.relation === 'FAMILY_HEAD');
-                            setConnectedMemberId(head ? head.id : otherMembers[0].id);
+                          // Smart suggested relative for newly chosen relationship without forcing Family Head
+                          const currentConnected = otherMembers.find((m) => m.id === connectedMemberId);
+                          const isCurrentlyHead = currentConnected?.relation === 'FAMILY_HEAD';
+
+                          if (r.code === 'SON_WIFE') {
+                            // Wife of Son -> Suggest Son from other members
+                            const son = otherMembers.find((m) => m.relation === 'SON');
+                            if (son) {
+                              setConnectedMemberId(son.id);
+                            } else if (isCurrentlyHead) {
+                              setConnectedMemberId('');
+                            }
+                          } else if (r.code === 'DAUGHTER_HUSBAND') {
+                            // Husband of Daughter -> Suggest Daughter
+                            const daughter = otherMembers.find((m) => m.relation === 'DAUGHTER');
+                            if (daughter) {
+                              setConnectedMemberId(daughter.id);
+                            } else if (isCurrentlyHead) {
+                              setConnectedMemberId('');
+                            }
+                          } else if (r.code === 'GRANDSON' || r.code === 'GRANDDAUGHTER') {
+                            // Grandchild -> Suggest Son or Daughter (parent)
+                            const child = otherMembers.find((m) => m.relation === 'SON' || m.relation === 'DAUGHTER');
+                            if (child) {
+                              setConnectedMemberId(child.id);
+                            } else if (isCurrentlyHead) {
+                              setConnectedMemberId('');
+                            }
+                          } else if (r.code === 'BROTHER_WIFE') {
+                            // Wife of Brother -> Suggest Brother
+                            const brother = otherMembers.find(
+                              (m) => m.relation === 'BROTHER' || m.relation === 'ELDER_BROTHER' || m.relation === 'YOUNGER_BROTHER'
+                            );
+                            if (brother) {
+                              setConnectedMemberId(brother.id);
+                            } else if (isCurrentlyHead) {
+                              setConnectedMemberId('');
+                            }
+                          } else if (r.code === 'BROTHER_SON' || r.code === 'BROTHER_DAUGHTER') {
+                            // Child of Brother -> Suggest Brother
+                            const brother = otherMembers.find(
+                              (m) => m.relation === 'BROTHER' || m.relation === 'ELDER_BROTHER' || m.relation === 'YOUNGER_BROTHER'
+                            );
+                            if (brother) {
+                              setConnectedMemberId(brother.id);
+                            } else if (isCurrentlyHead) {
+                              setConnectedMemberId('');
+                            }
+                          } else if (
+                            r.code === 'WIFE' ||
+                            r.code === 'HUSBAND' ||
+                            r.code === 'SON' ||
+                            r.code === 'DAUGHTER' ||
+                            r.code === 'FATHER' ||
+                            r.code === 'MOTHER'
+                          ) {
+                            if (!connectedMemberId && otherMembers.length > 0) {
+                              const head = otherMembers.find((m) => m.relation === 'FAMILY_HEAD');
+                              setConnectedMemberId(head ? head.id : otherMembers[0].id);
+                            }
                           }
                         }}
                         style={[
@@ -648,34 +708,48 @@ export default function EditMemberScreen() {
                               : `🔗 ${selectedRel.connectPrompt}`}
                           </Text>
                           <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
-                            Select relative from list / નીચેથી સંબંધિત સભ્ય પસંદ કરો:
+                            {connectedPerson
+                              ? `પસંદ કરેલ: ${connectedPerson.name} (બદલવા નીચે અન્ય સભ્ય પર ક્લિક કરો):`
+                              : `⚠️ કૃપા કરીને નીચેની યાદીમાંથી સંબંધિત સભ્ય પસંદ કરો:`}
                           </Text>
                         </>
                       );
                     })()}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-                      {otherMembers.map((m) => (
-                        <TouchableOpacity
-                          key={m.id}
-                          onPress={() => setConnectedMemberId(m.id)}
-                          style={[
-                            styles.connectedPill,
-                            {
-                              backgroundColor: connectedMemberId === m.id ? theme.primary : theme.card,
-                              borderColor: theme.primary,
-                            },
-                          ]}
-                        >
-                          <Text
+                      {otherMembers.map((m) => {
+                        const isSelected = connectedMemberId === m.id;
+                        return (
+                          <TouchableOpacity
+                            key={m.id}
+                            activeOpacity={0.7}
+                            onPress={() => setConnectedMemberId(m.id)}
                             style={[
-                              styles.connectedPillText,
-                              { color: connectedMemberId === m.id ? '#FFFFFF' : theme.text },
+                              styles.connectedPill,
+                              {
+                                backgroundColor: isSelected ? theme.primary : theme.card,
+                                borderColor: theme.primary,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                              },
                             ]}
                           >
-                            {m.name} ({m.display_relation?.split('/')[0].trim() || m.relation})
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                            {isSelected ? (
+                              <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+                            ) : null}
+                            <Text
+                              style={[
+                                styles.connectedPillText,
+                                {
+                                  color: isSelected ? '#FFFFFF' : theme.text,
+                                  fontWeight: isSelected ? '700' : '500',
+                                },
+                              ]}
+                            >
+                              {m.name} ({m.display_relation?.split('/')[0].trim() || m.relation})
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </ScrollView>
                   </View>
                 ) : null}
@@ -828,10 +902,14 @@ export default function EditMemberScreen() {
         {/* 3. OCCUPATION SECTION */}
         {activeSection === 'occupation' && (
           <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>Occupation Details</Text>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              {occupationType === 'STUDENT' ? 'વિદ્યાર્થીની વિગત / Student Details' : 'Occupation Details / વ્યવસાયની વિગત'}
+            </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: theme.text }]}>Category</Text>
+              <Text style={[styles.fieldLabel, { color: theme.text }]}>
+                {occupationType === 'STUDENT' ? 'Category / સ્થિતિ (વિદ્યાર્થી)' : 'Category / વ્યવસાય કેટેગરી'}
+              </Text>
               <View style={styles.gridWrap}>
                 {OCCUPATIONS.map((occ) => (
                   <TouchableOpacity
@@ -858,6 +936,9 @@ export default function EditMemberScreen() {
 
             {selectedOcc && selectedOcc.fields.length > 0 && (
               <View style={{ marginTop: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: theme.primary, marginBottom: 8 }}>
+                  {selectedOcc.code === 'STUDENT' ? 'વિદ્યાર્થીની વિગત / Student Details:' : `${selectedOcc.label} Details:`}
+                </Text>
                 {selectedOcc.fields.map((f) => (
                   <Input
                     key={f.key}

@@ -212,20 +212,18 @@ export function BookletTabView({
                         સમાજના સભ્યો / Members
                       </Text>
                     </View>
-
-                    <View style={[styles.statsDivider, { backgroundColor: theme.border }]} />
-
-                    <View style={styles.statsItem}>
-                      <Text style={[styles.statsNumber, { color: theme.success }]}>
-                        {families.length}
-                      </Text>
-                      <Text style={[styles.statsLabel, { color: theme.textSecondary }]}>
-                        ડિસ્પ્લે પરિણામ / Showing
-                      </Text>
-                    </View>
                   </View>
                 </Card>
               ) : null}
+
+              {searchQuery.trim().length > 0 && (
+                <View style={styles.searchResultNotice}>
+                  <Ionicons name="filter-outline" size={14} color={theme.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.searchResultText, { color: theme.textSecondary }]}>
+                    શોધ પરિણામ: {families.length} {families.length === 1 ? 'પરિવાર મળ્યો' : 'પરિવારો મળ્યા'}
+                  </Text>
+                </View>
+              )}
 
               {/* Community PDF, Excel & Print Bar */}
               {families.length > 0 ? (
@@ -339,7 +337,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   statsBanner: {
-    padding: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
   },
@@ -353,18 +352,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsNumber: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
   },
   statsLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 3,
     textAlign: 'center',
   },
   statsDivider: {
     width: 1,
-    height: 28,
+    height: 32,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -419,5 +418,15 @@ const styles = StyleSheet.create({
   communityPrintBtnText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  searchResultNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  searchResultText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

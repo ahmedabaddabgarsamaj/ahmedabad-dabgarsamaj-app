@@ -112,26 +112,22 @@ export function BookletScreenSkeleton() {
       <Card style={styles.statsCard}>
         <View style={styles.statsRow}>
           <View style={styles.statsItem}>
-            <Skeleton width={44} height={22} borderRadius={4} />
-            <Skeleton width={65} height={10} borderRadius={4} style={{ marginTop: 4 }} />
+            <Skeleton width={50} height={24} borderRadius={4} />
+            <Skeleton width={90} height={12} borderRadius={4} style={{ marginTop: 5 }} />
           </View>
           <View style={[styles.statsDivider, { backgroundColor: theme.border }]} />
           <View style={styles.statsItem}>
-            <Skeleton width={44} height={22} borderRadius={4} />
-            <Skeleton width={70} height={10} borderRadius={4} style={{ marginTop: 4 }} />
-          </View>
-          <View style={[styles.statsDivider, { backgroundColor: theme.border }]} />
-          <View style={styles.statsItem}>
-            <Skeleton width={44} height={22} borderRadius={4} />
-            <Skeleton width={65} height={10} borderRadius={4} style={{ marginTop: 4 }} />
+            <Skeleton width={50} height={24} borderRadius={4} />
+            <Skeleton width={90} height={12} borderRadius={4} style={{ marginTop: 5 }} />
           </View>
         </View>
       </Card>
 
       {/* Action Buttons Skeleton */}
       <View style={styles.actionRow}>
-        <Skeleton width="60%" height={38} borderRadius={10} />
-        <Skeleton width="37%" height={38} borderRadius={10} />
+        <Skeleton width="35%" height={38} borderRadius={10} />
+        <Skeleton width="35%" height={38} borderRadius={10} />
+        <Skeleton width="25%" height={38} borderRadius={10} />
       </View>
 
       {/* Compact Family Cards Skeleton */}
@@ -197,7 +193,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   statsCard: {
-    padding: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
   },
@@ -212,7 +209,7 @@ const styles = StyleSheet.create({
   },
   statsDivider: {
     width: 1,
-    height: 28,
+    height: 32,
   },
   actionRow: {
     flexDirection: 'row',

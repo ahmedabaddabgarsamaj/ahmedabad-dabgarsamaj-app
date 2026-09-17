@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
 import { AppStorage } from '@/lib/storage/appStorage';
 import { supabase, isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from '@/lib/supabase/client';
 import { Profile, UserRole } from '@/types/database';
@@ -20,6 +21,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ success?: boolean; email?: string; error?: string }>;
   sendResetOtp: (identifier: string) => Promise<{ success?: boolean; email?: string; error?: string }>;
   verifyOtpAndResetPassword: (email: string, otp: string, newPassword: string) => Promise<{ success?: boolean; error?: string }>;
+  tryAutoLogin: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -27,6 +29,37 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AUTH_STORAGE_KEY = 'cf_persistent_auth_user_v2';
+export const SAVED_LOGIN_IDENTIFIER_KEY = 'cf_saved_login_identifier';
+export const SAVED_LOGIN_PASSWORD_KEY = 'cf_saved_login_password';
+
+export async function saveLoginCredentials(identifier: string, password: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(SAVED_LOGIN_IDENTIFIER_KEY, identifier.trim());
+    await SecureStore.setItemAsync(SAVED_LOGIN_PASSWORD_KEY, password);
+  } catch (err) {
+    console.warn('Failed to save login credentials to SecureStore:', err);
+  }
+}
+
+export async function clearLoginCredentials(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => {});
+    await SecureStore.deleteItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => {});
+  } catch (err) {
+    console.warn('Failed to clear login credentials from SecureStore:', err);
+  }
+}
+
+export async function getSavedLoginCredentials(): Promise<{ identifier: string | null; password: string | null }> {
+  try {
+    const identifier = await SecureStore.getItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => null);
+    const password = await SecureStore.getItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => null);
+    return { identifier, password };
+  } catch (err) {
+    console.warn('Failed to load login credentials from SecureStore:', err);
+    return { identifier: null, password: null };
+  }
+}
 
 export async function savePersistentAuth(user: User | null, profile: Profile | null, session?: Session | null): Promise<void> {
   try {
@@ -110,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       // 1. Restore persistent user immediately from local storage
       const stored = await loadPersistentAuth();
+      let activeUser = stored.user;
 
       if (stored.user) {
         setUser(stored.user);
@@ -130,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 2. Check Supabase online session
         const { data: { session: onlineSession } } = await supabase.auth.getSession();
         if (onlineSession && onlineSession.user) {
+          activeUser = onlineSession.user;
           setSession(onlineSession);
           setUser(onlineSession.user);
 
@@ -148,10 +183,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               refresh_token: stored.session.refresh_token,
             });
             if (res.data?.session) {
+              activeUser = res.data.session.user;
               setSession(res.data.session);
               setUser(res.data.session.user);
             }
           } catch {}
+        }
+
+        // 3. Fail-safe Auto-Login: If no active session was found, attempt auto-login using saved credentials in SecureStore
+        if (!activeUser) {
+          const { identifier, password } = await getSavedLoginCredentials();
+          if (identifier && password) {
+            await signInWithEmail(identifier, password);
+          }
         }
       } catch (err) {
         console.warn('Error checking supabase session on boot:', err);
@@ -370,6 +414,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.user);
           setSession(data.session);
           await savePersistentAuth(data.user, null, data.session);
+          await saveLoginCredentials(identifier, password);
           await fetchProfile(data.user.id, data.user, data.session);
           return {};
         }
@@ -910,6 +955,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetInMemoryStore();
     await clearAppStore(currentUserId);
     await savePersistentAuth(null, null);
+    await clearLoginCredentials();
 
     if (isSupabaseConfigured) {
       try {
@@ -920,6 +966,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
+  };
+
+  const tryAutoLogin = async (): Promise<{ success: boolean; error?: string }> => {
+    if (user) return { success: true };
+    const { identifier, password } = await getSavedLoginCredentials();
+    if (identifier && password) {
+      const res = await signInWithEmail(identifier, password);
+      if (!res.error) {
+        return { success: true };
+      }
+      return { success: false, error: res.error };
+    }
+    return { success: false };
   };
 
   const refreshProfile = async () => {
@@ -949,6 +1008,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         sendResetOtp,
         verifyOtpAndResetPassword,
+        tryAutoLogin,
         signOut,
         refreshProfile,
       }}

@@ -45,7 +45,7 @@ export default function TermsAndConditionsScreen() {
             નિયમો અને શરતો (Terms & Conditions)
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૦૯ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 09 September 2026)
+            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૧૭ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 17 September 2026)
           </Text>
         </Card>
 
@@ -71,10 +71,10 @@ export default function TermsAndConditionsScreen() {
             </Text>
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • પરિવારના વડા તથા સભ્યો દ્વારા જે પણ માહિતી (નામ, જન્મ તારીખ, બ્લડ ગ્રૂપ, વ્યવસાય વગેરે) ઉમેરવામાં આવે તે સંપૂર્ણપણે સાચી અને સચોટ હોવી જોઈએ.
+            • પરિવારના વડા તથા સભ્યો દ્વારા જે પણ માહિતી (નામ, જન્મ તારીખ, બ્લડ ગ્રૂપ, સંબંધો, વ્યવસાય વગેરે) ઉમેરવામાં આવે તે સંપૂર્ણપણે સાચી અને સચોટ હોવી જોઈએ.
           </Text>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • કોઈપણ અન્ય વ્યક્તિ કે પરિવારની ખોટી ઓળખ બનાવીને અનધિકૃત માહિતી દાખલ કરવી પ્રતિબંધિત છે.
+            • કોઈપણ અન્ય વ્યક્તિ કે પરિવારની ખોટી ઓળખ બનાવીને અનધિકૃત માહિતી દાખલ કરવી સખત પ્રતિબંધિત છે.
           </Text>
         </Card>
 
@@ -88,6 +88,9 @@ export default function TermsAndConditionsScreen() {
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
             • આપના એકાઉન્ટનો પાસવર્ડ ગુપ્ત રાખવાની સંપૂર્ણ જવાબદારી સભ્યની રહેશે.
+          </Text>
+          <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
+            • જો આપના પરિવારના અન્ય સભ્યોને લૉગિનની સુવિધા આપવી હોય, તો તેઓ પરિવારના વડાના રજિસ્ટર્ડ મોબાઈલ નંબર અને પાસવર્ડ દ્વારા અધિકૃત રીતે લૉગિન કરી શકે છે.
           </Text>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
             • જો કોઈ અનધિકૃત પ્રવૃત્તિ ધ્યાને આવે તો તુરંત જ પાસવર્ડ બદલીને એડમિનનો સંપર્ક કરવો.
@@ -113,13 +116,39 @@ export default function TermsAndConditionsScreen() {
         {/* Term 5 */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
-            <Ionicons name="refresh-circle" size={20} color={theme.primary} />
+            <Ionicons name="trash-bin" size={20} color={theme.error} />
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              ૫. નિયમોમાં ફેરફાર (Modifications)
+              ૫. એકાઉન્ટ અને ડેટા સમાપ્તિ (Account Deletion & Termination)
             </Text>
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            સમાજ સમિતિ જરૂરિયાત મુજબ આ નિયમો અને શરતોમાં સુધારો કરવાનો અધિકાર ધરાવે છે. કોઈપણ ફેરફાર એપ્લિકેશન તથા વેબસાઇટ મારફતે જાહેર કરવામાં આવશે.
+            પરિવારના વડા પોતાની પ્રોફાઇલમાંથી કોઈપણ સમયે 'Delete Account / ખાતું ડિલીટ કરો' વિકલ્પ દ્વારા સમગ્ર પરિવારનો ડેટા અને ક્રેડેન્શિયલ્સ કાયમ માટે રદ (Delete) કરી શકે છે.
+          </Text>
+        </Card>
+
+        {/* Term 6 */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="refresh-circle" size={20} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              ૬. નિયમોમાં ફેરફાર (Modifications)
+            </Text>
+          </View>
+          <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
+            શ્રી અમદાવાદ ડબગર સમાજ સમિતિ જરૂરિયાત મુજબ આ નિયમો અને શરતોમાં સુધારો કરવાનો અધિકાર ધરાવે છે. કોઈપણ ફેરફાર એપ્લિકેશન તથા વેબસાઇટ મારફતે જાહેર કરવામાં આવશે.
+          </Text>
+        </Card>
+
+        {/* Term 7: Contact */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="help-circle" size={20} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              ૭. સંપર્ક અને સહાય (Contact Support)
+            </Text>
+          </View>
+          <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
+            નિયમો અને શરતો બાબતે કોઈ પ્રશ્ન હોય તો આપ શ્રી અમદાવાદ ડબગર સમાજ કમિટી અથવા સત્તાવાર હેલ્પડેસ્કનો સંપર્ક કરી શકો છો.
           </Text>
         </Card>
 

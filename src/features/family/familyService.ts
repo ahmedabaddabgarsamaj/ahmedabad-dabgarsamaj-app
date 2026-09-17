@@ -4,20 +4,28 @@ import { calculateAge, formatDate, formatDateForDB, isDummyDOB } from '@/lib/uti
 import { getRelationshipDisplay } from '@/constants/relationships';
 import { clearAppStore, resetInMemoryStore } from './familyStore';
 import { AppStorage } from '@/lib/storage/appStorage';
+import { mapOccupationFields } from '@/features/members/membersService';
 
 export interface CreateFamilyInput {
   name: string;
   gender: 'Male' | 'Female';
   dob: string;
   mobile: string;
+  email?: string | null;
   photo_url?: string | null;
   address: string;
   area_id?: string | null;
   city: string;
   state: string;
   pincode: string;
+  education_level?: string;
+  course_or_standard?: string;
+  current_year?: string;
+  passing_year?: string;
+  institution?: string;
   education_status?: string;
   occupation_type?: string;
+  occupation_details?: Record<string, any>;
   head_user_id?: string;
   blood_group?: string | null;
   birth_place?: string | null;
@@ -207,7 +215,7 @@ export const familyService = {
               const isDeceased = m.is_deceased === true || m.status === 'DECEASED' || m.occupation_details?.is_deceased === true;
               const deceasedDate = m.deceased_date || m.occupation_details?.deceased_date || null;
               const canEdit = m.can_edit_family === true || m.occupation_details?.can_edit_family === true || m.relation === 'FAMILY_HEAD';
-              const memberEmail = m.email || m.occupation_details?.email || null;
+              const memberEmail = m.email || m.occupation_details?.email || (m.relation === 'FAMILY_HEAD' ? userEmail : null);
               const isDobUnknown = isDummyDOB(m.dob) || m.occupation_details?.dob_unknown;
               return {
                 ...m,
@@ -537,6 +545,14 @@ export const familyService = {
       let headData = existingHead;
 
       if (!headData) {
+        const effectiveEmail = input.email ? input.email.trim().toLowerCase() : headUserEmail;
+        const occDetails = {
+          ...(input.occupation_details || {}),
+          blood_group: input.blood_group || null,
+          birth_place: input.birth_place || null,
+          email: effectiveEmail,
+        };
+
         const headPayload: any = {
           family_id: familyData.id,
           name: input.name.trim(),
@@ -548,14 +564,10 @@ export const familyService = {
           residence_type: 'SAME_AS_FAMILY',
           education_status: input.education_status || null,
           occupation_type: input.occupation_type || null,
-          email: headUserEmail,
+          email: effectiveEmail,
           blood_group: input.blood_group || null,
           birth_place: input.birth_place || null,
-          occupation_details: {
-            blood_group: input.blood_group || null,
-            birth_place: input.birth_place || null,
-            email: headUserEmail,
-          },
+          occupation_details: occDetails,
           status: 'ACTIVE',
         };
 
@@ -579,6 +591,15 @@ export const familyService = {
         }
         headData = insertedHead;
       } else {
+        const effectiveEmail = input.email ? input.email.trim().toLowerCase() : headUserEmail;
+        const occDetails = {
+          ...(headData.occupation_details || {}),
+          ...(input.occupation_details || {}),
+          blood_group: input.blood_group !== undefined ? input.blood_group : (headData.blood_group || null),
+          birth_place: input.birth_place !== undefined ? input.birth_place : (headData.birth_place || null),
+          email: effectiveEmail,
+        };
+
         const updateHeadPayload: any = {
           name: input.name.trim(),
           gender: input.gender,
@@ -587,9 +608,11 @@ export const familyService = {
           dob: formatDateForDB(input.dob),
           education_status: input.education_status || existingHead.education_status,
           occupation_type: input.occupation_type || existingHead.occupation_type,
+          occupation_details: occDetails,
           updated_at: new Date().toISOString(),
         };
 
+        if (effectiveEmail) updateHeadPayload.email = effectiveEmail;
         if (input.blood_group !== undefined) updateHeadPayload.blood_group = input.blood_group;
         if (input.birth_place !== undefined) updateHeadPayload.birth_place = input.birth_place;
 
@@ -605,20 +628,72 @@ export const familyService = {
           delete updateHeadPayload.birth_place;
           const retryRes = await supabase.from('family_members').update(updateHeadPayload).eq('id', headData.id).select().single();
           updatedHead = retryRes.data;
+          updateHeadError = retryRes.error;
         }
 
         if (updatedHead) headData = updatedHead;
       }
 
-      // If occupation provided, insert/upsert into occupation_records
+      // Insert / Update education record in Supabase
+      if (input.education_level && input.course_or_standard && headData) {
+        try {
+          const { data: existingEdu } = await supabase
+            .from('education_records')
+            .select('id')
+            .eq('family_member_id', headData.id)
+            .maybeSingle();
+
+          if (existingEdu) {
+            await supabase.from('education_records').update({
+              education_level: input.education_level,
+              course_or_standard: input.course_or_standard,
+              education_status: input.education_status || 'Studying',
+              passing_year: input.passing_year || null,
+              current_year: input.current_year || null,
+              institution: input.institution?.trim() || null,
+              updated_at: new Date().toISOString(),
+            }).eq('id', existingEdu.id);
+          } else {
+            await supabase.from('education_records').insert({
+              family_member_id: headData.id,
+              education_level: input.education_level,
+              course_or_standard: input.course_or_standard,
+              education_status: input.education_status || 'Studying',
+              passing_year: input.passing_year || null,
+              current_year: input.current_year || null,
+              institution: input.institution?.trim() || null,
+            });
+          }
+        } catch (eduErr) {
+          console.warn('Head education record sync error:', eduErr);
+        }
+      }
+
+      // Insert / Update occupation record in Supabase
       if (input.occupation_type && headData) {
         try {
-          await supabase.from('occupation_records').upsert({
-            family_member_id: headData.id,
-            occupation_type: input.occupation_type,
-            updated_at: new Date().toISOString(),
-          });
-        } catch {}
+          const { data: existingOcc } = await supabase
+            .from('occupation_records')
+            .select('id')
+            .eq('family_member_id', headData.id)
+            .maybeSingle();
+
+          const occPayload = mapOccupationFields(input.occupation_type, input.occupation_details);
+
+          if (existingOcc && occPayload) {
+            await supabase.from('occupation_records').update({
+              ...occPayload,
+              updated_at: new Date().toISOString(),
+            }).eq('id', existingOcc.id);
+          } else if (occPayload) {
+            await supabase.from('occupation_records').insert({
+              family_member_id: headData.id,
+              ...occPayload,
+            });
+          }
+        } catch (occErr) {
+          console.warn('Head occupation record sync error:', occErr);
+        }
       }
 
       return { family: familyData as Family };

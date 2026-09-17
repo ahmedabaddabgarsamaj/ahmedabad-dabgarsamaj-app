@@ -96,4 +96,59 @@ export const relationshipsService = {
 
     return {};
   },
+
+  /**
+   * Remove all existing direct relationships for a member in a family.
+   * Ensures no old or duplicate links remain when a member is updated or re-linked.
+   */
+  async clearMemberRelationships(familyId: string, memberId: string): Promise<{ error?: string }> {
+    if (!familyId || !memberId) return {};
+
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase
+          .from('family_relationships')
+          .delete()
+          .eq('family_id', familyId)
+          .or(`from_member_id.eq.${memberId},to_member_id.eq.${memberId}`);
+
+        if (error) {
+          console.warn('clearMemberRelationships error:', error);
+          return { error: error.message };
+        }
+      } catch (err: any) {
+        console.warn('clearMemberRelationships exception:', err);
+        return { error: err?.message || 'Failed to clear relationships' };
+      }
+    }
+
+    return {};
+  },
+
+  /**
+   * Atomically replace a member's relationship link in the family tree.
+   * Cleans any previous links before setting the new link with targetMemberId.
+   */
+  async setMemberRelationship(
+    familyId: string,
+    memberId: string,
+    targetMemberId: string,
+    connectType: 'spouse_of' | 'child_of' | 'parent_of'
+  ): Promise<{ error?: string }> {
+    if (!familyId || !memberId || !targetMemberId) return {};
+
+    // 1. Remove previous direct relationships for this member
+    await this.clearMemberRelationships(familyId, memberId);
+
+    // 2. Insert the fresh relationship
+    if (connectType === 'spouse_of') {
+      return await this.addRelationship(familyId, memberId, targetMemberId, 'SPOUSE');
+    } else if (connectType === 'child_of') {
+      return await this.addRelationship(familyId, targetMemberId, memberId, 'PARENT');
+    } else if (connectType === 'parent_of') {
+      return await this.addRelationship(familyId, memberId, targetMemberId, 'PARENT');
+    }
+
+    return {};
+  },
 };

@@ -110,6 +110,7 @@ export const membersService = {
       blood_group: input.blood_group || null,
       birth_place: input.birth_place || null,
       dob_unknown: !cleanDob,
+      email: input.email ? input.email.trim().toLowerCase() : null,
     };
 
     const newMember: FamilyMember = {
@@ -120,6 +121,7 @@ export const membersService = {
       dob: formattedDob,
       relation: input.relation,
       mobile: input.mobile?.trim() || null,
+      email: input.email ? input.email.trim().toLowerCase() : null,
       photo_url: input.photo_url || null,
       residence_type: input.residence_type,
       separate_address: input.residence_type === 'SEPARATE' ? input.separate_address?.trim() || null : null,
@@ -338,7 +340,28 @@ export const membersService = {
         null;
       const bloodGroup = memberData.blood_group || (memberData.occupation_details as any)?.blood_group || null;
       const birthPlace = memberData.birth_place || (memberData.occupation_details as any)?.birth_place || null;
-      const memberEmail = memberData.email || (memberData.occupation_details as any)?.email || null;
+      let memberEmail = memberData.email || (memberData.occupation_details as any)?.email || null;
+      if (!memberEmail && memberData.relation === 'FAMILY_HEAD' && memberData.family_id) {
+        try {
+          const { data: famData } = await supabase
+            .from('families')
+            .select('head_user_id')
+            .eq('id', memberData.family_id)
+            .maybeSingle();
+          if (famData?.head_user_id) {
+            const { data: profData } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', famData.head_user_id)
+              .maybeSingle();
+            if (profData?.email) {
+              memberEmail = profData.email;
+            }
+          }
+        } catch {
+          // graceful fallback
+        }
+      }
       const canEdit = memberData.can_edit_family === true || (memberData.occupation_details as any)?.can_edit_family === true || memberData.relation === 'FAMILY_HEAD';
 
         const safeDob = isDummyDOB(memberData.dob) ? '' : formatDate(memberData.dob);
@@ -388,6 +411,7 @@ export const membersService = {
       ...(bloodGroup !== undefined ? { blood_group: bloodGroup } : {}),
       ...(birthPlace !== undefined ? { birth_place: birthPlace } : {}),
       dob_unknown: updates.dob !== undefined ? isDummyDOB(updates.dob) : undefined,
+      ...(updates.email !== undefined ? { email: updates.email ? updates.email.trim().toLowerCase() : null } : {}),
     };
 
     if (isSupabaseConfigured) {

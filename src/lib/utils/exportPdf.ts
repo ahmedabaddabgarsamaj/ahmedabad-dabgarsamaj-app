@@ -44,7 +44,12 @@ function formatPdfOccupation(m: FamilyMember): string {
   const occTypeRaw = m.occupation_type || (m as any).occupationRecord?.occupation_type;
   if (!occTypeRaw) return '-';
 
-  const occDisplay = getOccupationDisplay(occTypeRaw) || occTypeRaw;
+  const occDisplay =
+    occTypeRaw === 'BUSINESS_OWNER' || occTypeRaw === 'SHOP_OWNER'
+      ? 'Shop Owner / દુકાનદાર'
+      : occTypeRaw === 'STUDENT'
+      ? 'Student / વિદ્યાર્થી'
+      : getOccupationDisplay(occTypeRaw) || occTypeRaw;
   const occRec = (m as any).occupationRecord || {};
   const details = m.occupation_details || occRec.details || {};
 
@@ -53,8 +58,8 @@ function formatPdfOccupation(m: FamilyMember): string {
     occRec.business_name ||
     details.company_name ||
     details.workplace_or_firm ||
-    details.business_name ||
     details.shop_name ||
+    details.business_name ||
     details.practice_name ||
     details.school_or_college ||
     details.work_description ||
@@ -68,15 +73,15 @@ function formatPdfOccupation(m: FamilyMember): string {
     details.designation ||
     details.profession ||
     details.current_year_or_std ||
-    details.business_type ||
     details.shop_type ||
+    details.business_type ||
     '';
 
   const loc =
     occRec.work_location ||
     details.work_location ||
-    details.business_location ||
     details.shop_location ||
+    details.business_location ||
     details.village_or_taluka ||
     '';
 
@@ -98,7 +103,8 @@ function formatPdfContact(m: FamilyMember): string {
 
   const contactItems: string[] = [];
   if (m.mobile) contactItems.push(`<div style="white-space:nowrap; font-weight:600; font-size:8.5px;">📱 ${m.mobile}</div>`);
-  if (m.email) contactItems.push(`<div style="font-size:7.5px; color:#475569; word-break:break-all; line-height:1.15;">✉️ ${m.email}</div>`);
+  const effectiveEmail = (m.email && m.email.trim()) || (m.occupation_details as any)?.email;
+  if (effectiveEmail) contactItems.push(`<div style="font-size:7.5px; color:#475569; word-break:break-all; line-height:1.15;">✉️ ${effectiveEmail}</div>`);
   if (m.residence_type === 'SEPARATE' && (m.separate_address || m.separate_city)) {
     const sep = [m.separate_address, m.separate_city, m.separate_pincode].filter(Boolean).join(', ');
     contactItems.push(`<div style="color:#D97706; font-size:7.5px; line-height:1.15; margin-top:1px;">🏠 અલગ: ${sep}</div>`);
@@ -111,6 +117,7 @@ function formatPdfContact(m: FamilyMember): string {
  */
 export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyItem, members: FamilyMember[]): string {
   const head = members.find((m) => m.relation === 'FAMILY_HEAD') || members[0];
+  const headEmail = (head?.email && head.email.trim()) || (head?.occupation_details as any)?.email;
   const dateStr = new Date().toLocaleDateString('gu-IN', {
     year: 'numeric',
     month: 'long',
@@ -252,7 +259,10 @@ export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyI
               <span style="color:#0F172A; font-weight:800; font-size:11px; background:#FFFFFF; border:1px solid #64748B; padding:1px 5px; border-radius:3px; margin-left:4px;">${family.family_code}</span>
               <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${family.family_code}" target="_blank" style="color:#0284C7; background:#FFFFFF; border:1px solid #0284C7; padding:1px 6px; border-radius:3px; font-size:9px; font-weight:700; text-decoration:none; margin-left:6px; display:inline-block;">💳 ડિજિટલ સ્માર્ટ કાર્ડ ↗</a>
             </div>
-            <div style="margin-top:3px;"><strong>પરિવાર વડા / Head:</strong> <strong style="color:#0F172A; font-size:12px; font-weight:800;">${head?.name || '-'}</strong></div>
+            <div style="margin-top:3px;">
+              <strong>પરિવાર વડા / Head:</strong> <strong style="color:#0F172A; font-size:12px; font-weight:800;">${head?.name || '-'}</strong>
+              ${headEmail ? `<span style="color:#0369A1; font-weight:600; font-size:9.5px; margin-left:6px;">(✉️ ${headEmail})</span>` : ''}
+            </div>
             <div style="margin-top:2px;"><strong>શહેર / વતન:</strong> <span style="color:#0F172A; font-weight:600;">${(family as any).native_place || family.city || 'Ahmedabad'}</span></div>
           </div>
           <div class="info-col" style="text-align: right;">
@@ -277,7 +287,7 @@ export function generateSingleFamilyHtml(family: Family | ExportDirectoryFamilyI
               <th style="white-space: nowrap;">ઉંમર</th>
               <th style="text-align: left;">શિક્ષણ</th>
               <th style="text-align: left;">વ્યવસાય / વિગત</th>
-              <th style="white-space: nowrap;">મોબાઈલ</th>
+              <th style="white-space: nowrap;">સંપર્ક (Mobile / Email)</th>
               <th style="padding: 3px 2px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap; width: 48px;">લિંક્સ</th>
             </tr>
           </thead>
@@ -310,6 +320,7 @@ export function generateCommunityBookletHtml(families: ExportDirectoryFamilyItem
   const familySections = families
     .map((fam, fIdx) => {
       const head = fam.members?.find((m: FamilyMember) => m.relation === 'FAMILY_HEAD') || fam.members?.[0];
+      const headEmail = (head?.email && head.email.trim()) || (head?.occupation_details as any)?.email;
       const memberRows = (fam.members || [])
         .map((m: FamilyMember, mIdx: number) => {
           const isDeceased = m.is_deceased === true || (m as any).status === 'DECEASED';
@@ -356,6 +367,7 @@ export function generateCommunityBookletHtml(families: ExportDirectoryFamilyItem
             <div>
               <span style="color: #0F172A; font-size: 12.5px; font-weight: 800;">${fIdx + 1}. ${head?.name || fam.head_name || 'પરિવાર'}</span>
               <span style="color: #0F172A; font-size: 10px; font-weight: 800; margin-left: 6px; background: #FFFFFF; border: 1px solid #64748B; padding: 1px 5px; border-radius: 4px; display: inline-block;">કોડ: ${fam.family_code}</span>
+              ${headEmail ? `<span style="color: #0369A1; font-size: 9.5px; font-weight: 700; margin-left: 6px; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 1px 5px; border-radius: 4px; display: inline-block;">✉️ ${headEmail}</span>` : ''}
               <a href="https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${fam.family_code}" target="_blank" style="color:#0284C7; background:#FFFFFF; border:1px solid #0284C7; padding:1px 5px; border-radius:3px; font-size:8.5px; font-weight:700; text-decoration:none; margin-left:5px; display:inline-block;">💳 ડિજિટલ સ્માર્ટ કાર્ડ ↗</a>
             </div>
             <div style="font-size: 9px; color: #1E293B; font-weight: 700; white-space: nowrap; margin-left: 4px;">
@@ -376,7 +388,7 @@ export function generateCommunityBookletHtml(families: ExportDirectoryFamilyItem
                 <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">ઉંમર</th>
                 <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; text-align: left;">શિક્ષણ</th>
                 <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; text-align: left;">વ્યવસાય</th>
-                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">મોબાઈલ</th>
+                <th style="padding: 3px 4px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap;">સંપર્ક (Mobile / Email)</th>
                 <th style="padding: 3px 2px; border: 1px solid #CBD5E1; font-size: 8px; white-space: nowrap; width: 48px;">લિંક્સ</th>
               </tr>
             </thead>
@@ -688,6 +700,7 @@ export function generateDigitalFamilyIdCardHtml(family: Family, members: FamilyM
     livingMembers.find((m) => m.relation === 'FAMILY_HEAD') ||
     members.find((m) => m.relation === 'FAMILY_HEAD') ||
     members[0];
+  const headEmail = (head?.email && head.email.trim()) || (head?.occupation_details as any)?.email;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
     `https://ahmedabaddabgarsamaj.vercel.app/family-card?code=${family.family_code}`
   )}`;
@@ -996,7 +1009,7 @@ export function generateDigitalFamilyIdCardHtml(family: Family, members: FamilyM
               <div>
                 <div class="head-name">${head?.name || 'Head Member'}</div>
                 <div class="info-grid">
-                  <div><strong>મોબાઈલ:</strong> ${head?.mobile || 'N/A'}</div>
+                  <div><strong>મોબાઈલ:</strong> ${head?.mobile || 'N/A'}${headEmail ? ` | <strong>ઈમેઈલ:</strong> ${headEmail}` : ''}</div>
                   <div><strong>વતન:</strong> ${(family as any).native_place || family.city || 'Ahmedabad'}</div>
                   <div><strong>સરનામું:</strong> ${family.address}</div>
                   <div><strong>શહેર/પિન:</strong> ${family.city}, ${family.state} - ${family.pincode}</div>

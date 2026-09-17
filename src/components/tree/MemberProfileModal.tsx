@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Linking,
   Modal,
   StyleSheet,
   Text,
@@ -148,6 +149,23 @@ export function MemberProfileModal({
               </View>
             ) : null}
 
+            {(member.email || (member.occupation_details as any)?.email) ? (
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                  Email ID / ઈમેઈલ:
+                </Text>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => Linking.openURL(`mailto:${member.email || (member.occupation_details as any)?.email}`)}
+                  style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}
+                >
+                  <Text style={[styles.detailValue, { color: theme.primary, textDecorationLine: 'underline', fontWeight: '600' }]} numberOfLines={1}>
+                    ✉️ {member.email || (member.occupation_details as any)?.email}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
             {member.education_status || (member as any).educationRecord ? (
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
@@ -162,10 +180,10 @@ export function MemberProfileModal({
             {member.occupation_type ? (
               <View style={styles.detailRow}>
                 <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Occupation:
+                  {member.occupation_type === 'STUDENT' ? 'Student / વિદ્યાર્થી:' : 'Occupation / વ્યવસાય:'}
                 </Text>
                 <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {getOccupationDisplay(member.occupation_type)}
+                  {member.occupation_type === 'STUDENT' ? '🎓 ' : '💼 '}{getOccupationDisplay(member.occupation_type)}
                 </Text>
               </View>
             ) : null}

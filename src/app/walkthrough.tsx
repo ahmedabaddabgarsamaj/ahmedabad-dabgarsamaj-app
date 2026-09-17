@@ -9,6 +9,7 @@ import { getAppVersion } from '@/constants/version';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Linking,
   Modal,
@@ -24,12 +25,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function WalkthroughScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, tryAutoLogin } = useAuth();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const appVersion = getAppVersion();
 
   const safeBottom = Math.max(insets.bottom, 12);
@@ -51,12 +53,26 @@ export default function WalkthroughScreen() {
     }
   };
 
-  const handleFinish = () => {
-    if (!user) {
-      router.replace('/(auth)/login' as any);
-    } else {
+  const handleFinish = async () => {
+    if (user) {
       router.replace('/(family)/home' as any);
+      return;
     }
+
+    setIsFinishing(true);
+    try {
+      const autoRes = await tryAutoLogin();
+      if (autoRes.success) {
+        router.replace('/(family)/home' as any);
+        return;
+      }
+    } catch (e) {
+      console.warn('Auto-login attempt failed in walkthrough:', e);
+    } finally {
+      setIsFinishing(false);
+    }
+
+    router.replace('/(auth)/login' as any);
   };
 
   const handleCall = (phoneNumber: string) => {
@@ -107,6 +123,15 @@ export default function WalkthroughScreen() {
             </Text>
           </View>
           {Platform.OS === 'web' && <PWAInstallButton />}
+          {user ? (
+            <TouchableOpacity
+              onPress={handleFinish}
+              activeOpacity={0.8}
+              style={[styles.quickSkipBtn, { backgroundColor: theme.primary }]}
+            >
+              <Text style={styles.quickSkipBtnText}>પ્રવેશ ➔</Text>
+            </TouchableOpacity>
+          ) : null}
           <View style={[styles.stepPillBadge, { backgroundColor: theme.primaryLight }]}>
             <Text style={[styles.stepPillBadgeText, { color: theme.primary }]}>
               {currentStep} / ૩
@@ -783,10 +808,19 @@ export default function WalkthroughScreen() {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleFinish}
+              disabled={isFinishing}
               style={[styles.finishBtn, { backgroundColor: '#16A34A' }]}
             >
-              <Text style={styles.finishBtnText}>પ્રવેશ કરો (Get Started)</Text>
-              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+              {isFinishing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.finishBtnText}>
+                    {user ? 'પરિવાર પુસ્તિકામાં પ્રવેશ કરો (Open App)' : 'પ્રવેશ કરો / લૉગિન (Login)'}
+                  </Text>
+                  <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                </>
+              )}
             </TouchableOpacity>
           )}
         </View>
@@ -873,6 +907,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     marginTop: 1,
+  },
+  quickSkipBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickSkipBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   stepPillBadge: {
     paddingHorizontal: 8,

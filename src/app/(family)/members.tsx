@@ -83,7 +83,9 @@ export default function FamilyMembersListScreen() {
       (m.display_relation && m.display_relation.toLowerCase().includes(q)) ||
       (m.relation && m.relation.toLowerCase().includes(q)) ||
       (m.occupation_type && m.occupation_type.toLowerCase().includes(q)) ||
-      (m.education_status && m.education_status.toLowerCase().includes(q))
+      (m.education_status && m.education_status.toLowerCase().includes(q)) ||
+      (m.email && m.email.toLowerCase().includes(q)) ||
+      ((m.occupation_details as any)?.email && (m.occupation_details as any).email.toLowerCase().includes(q))
     );
   });
 
@@ -177,6 +179,15 @@ export default function FamilyMembersListScreen() {
                       {member.display_relation || member.relation}
                     </Text>
 
+                    {(member.email || (member.occupation_details as any)?.email) ? (
+                      <View style={styles.memberEmailRow}>
+                        <Ionicons name="mail-outline" size={12} color={theme.primary} />
+                        <Text numberOfLines={1} style={[styles.memberEmailText, { color: theme.textSecondary }]}>
+                          {member.email || (member.occupation_details as any)?.email}
+                        </Text>
+                      </View>
+                    ) : null}
+
                     <View style={styles.badgeRow}>
                       <Badge label={member.gender} variant="neutral" size="sm" />
                       {member.age !== undefined ? (
@@ -267,5 +278,16 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     marginTop: 4,
+  },
+  memberEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+    marginBottom: 2,
+  },
+  memberEmailText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

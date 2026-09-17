@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -104,18 +105,22 @@ export default function MemberDetailScreen() {
 
         // Find relationship with other family members
         const relRes = await relationshipsService.getFamilyRelationships(targetFamily.id);
-        const matchedRel = relRes.relationships.find(
+        const matchingRels = relRes.relationships.filter(
           (r) => r.from_member_id === id || r.to_member_id === id
         );
+        const matchedRel = matchingRels.length > 0 ? matchingRels[matchingRels.length - 1] : null;
 
-        if (matchedRel) {
+        if (matchedRel && currentMember.relation !== 'FAMILY_HEAD') {
           const otherId = matchedRel.from_member_id === id ? matchedRel.to_member_id : matchedRel.from_member_id;
           const otherMember = targetMembers.find((m) => m.id === otherId);
           if (otherMember) {
             setConnectedPersonName(otherMember.name);
-            const relDef = RELATIONSHIPS.find((r) => r.code === (currentMember.relation || otherMember.relation));
+            const relDef = RELATIONSHIPS.find((r) => r.code === currentMember.relation);
             setConnectedRelationLabel(relDef?.relationOf || matchedRel.relationship_type);
           }
+        } else {
+          setConnectedPersonName('');
+          setConnectedRelationLabel('');
         }
       }
     }
@@ -231,6 +236,7 @@ export default function MemberDetailScreen() {
   }
 
   const occDetails = occupation?.details || member.occupation_details || {};
+  const resolvedMemberEmail = member.email || (member.occupation_details as any)?.email || (occDetails as any)?.email || null;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -289,7 +295,7 @@ export default function MemberDetailScreen() {
               </Text>
               <Text style={[styles.profileRelation, { color: theme.primary }]}>
                 {member.display_relation}
-                {connectedPersonName ? ` (of ${connectedPersonName})` : ''}
+                {connectedPersonName && member.relation !== 'FAMILY_HEAD' ? ` (of ${connectedPersonName})` : ''}
               </Text>
               <View style={styles.badgeRow}>
                 <Badge
@@ -303,14 +309,12 @@ export default function MemberDetailScreen() {
                       label="🕊️ સ્વર્ગસ્થ (Late)"
                       variant="neutral"
                       size="sm"
-                      style={{ marginLeft: 6 }}
                     />
                     {member.dob || member.age !== undefined ? (
                       <Badge
                         label={`ઉંમર: ${formatAgeShort(member.dob, member.age, member.deceased_date)}`}
                         variant="neutral"
                         size="sm"
-                        style={{ marginLeft: 6 }}
                       />
                     ) : null}
                   </>
@@ -320,7 +324,6 @@ export default function MemberDetailScreen() {
                       label={formatAgeShort(member.dob, member.age)}
                       variant="neutral"
                       size="sm"
-                      style={{ marginLeft: 6 }}
                     />
                   ) : null
                 )}
@@ -329,7 +332,6 @@ export default function MemberDetailScreen() {
                     label={`🩸 ${member.blood_group}`}
                     variant="neutral"
                     size="sm"
-                    style={{ marginLeft: 6 }}
                   />
                 ) : null}
                 {member.can_edit_family && member.relation !== 'FAMILY_HEAD' ? (
@@ -337,13 +339,64 @@ export default function MemberDetailScreen() {
                     label="✏️ Authorized Editor"
                     variant="success"
                     size="sm"
-                    style={{ marginLeft: 6 }}
                   />
                 ) : null}
               </View>
+              {resolvedMemberEmail ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => Linking.openURL(`mailto:${resolvedMemberEmail}`)}
+                  style={styles.profileEmailRow}
+                >
+                  <Ionicons name="mail" size={13} color={theme.primary} />
+                  <Text numberOfLines={1} style={[styles.profileEmailText, { color: theme.textSecondary }]}>
+                    {resolvedMemberEmail}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
         </Card>
+
+        {/* Family Head Registered Email Card */}
+        {member.relation === 'FAMILY_HEAD' && resolvedMemberEmail ? (
+          <Card
+            style={[
+              styles.permissionCard,
+              {
+                backgroundColor: '#ECFDF5',
+                borderColor: '#10B981',
+              },
+            ]}
+          >
+            <View style={styles.permissionHeader}>
+              <View style={[styles.permissionIconCircle, { backgroundColor: '#D1FAE5' }]}>
+                <Ionicons name="mail" size={24} color="#059669" />
+              </View>
+
+              <View style={styles.permissionInfo}>
+                <Text style={[styles.permissionTitle, { color: theme.text }]}>
+                  પરિવારના વડાનું રજીસ્ટર્ડ ઈમેઈલ (Primary Account Email)
+                </Text>
+                <Text style={[styles.permissionSubtitle, { color: theme.textSecondary }]}>
+                  આ એકાઉન્ટ લૉગિન અને પાસવર્ડ રીસેટ OTP માટેનું મુખ્ય ઈમેઈલ એડ્રેસ છે.
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.authorizedEmailBox, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="shield-checkmark" size={16} color="#15803D" style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803D' }}>
+                  નોંધાયેલ ઈમેઈલ (Registered Email):
+                </Text>
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#166534', marginTop: 3 }}>
+                {resolvedMemberEmail}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
 
         {/* Member Recovery Email Card (For Password Reset OTP) */}
         {isOwnFamily && isViewerHead && member.relation !== 'FAMILY_HEAD' && !member.is_deceased ? (
@@ -485,6 +538,32 @@ export default function MemberDetailScreen() {
               </Text>
             </View>
           ) : null}
+          {!member.is_deceased && resolvedMemberEmail ? (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                Email ID / ઈમેઈલ:
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => Linking.openURL(`mailto:${resolvedMemberEmail}`)}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginLeft: 8 }}
+              >
+                <Ionicons name="mail-outline" size={14} color={theme.primary} style={{ marginRight: 4 }} />
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '600',
+                    color: theme.primary,
+                    textDecorationLine: 'underline',
+                    textAlign: 'right',
+                  }}
+                >
+                  {resolvedMemberEmail}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
           <View style={styles.detailRow}>
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
               Relationship:
@@ -493,7 +572,7 @@ export default function MemberDetailScreen() {
               {member.display_relation}
             </Text>
           </View>
-          {connectedPersonName ? (
+          {connectedPersonName && member.relation !== 'FAMILY_HEAD' ? (
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                 Connected Relative:
@@ -580,11 +659,11 @@ export default function MemberDetailScreen() {
         {!member.is_deceased && (
           <Card style={styles.sectionCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Occupation / વ્યવસાય
+              {member.occupation_type === 'STUDENT' ? 'Student / વિદ્યાર્થી' : 'Occupation / વ્યવસાય'}
             </Text>
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                Category:
+                {member.occupation_type === 'STUDENT' ? 'સ્થિતિ / Role:' : 'Category / પ્રકાર:'}
               </Text>
               <Text style={[styles.detailValue, { color: theme.text, fontWeight: '700' }]}>
                 {getOccupationDisplay(member.occupation_type)}
@@ -875,7 +954,19 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
     marginTop: 6,
+  },
+  profileEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 7,
+  },
+  profileEmailText: {
+    fontSize: 12.5,
+    fontWeight: '600',
   },
   sectionCard: {
     padding: 16,

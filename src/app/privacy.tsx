@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
             ગોપનીયતા નીતિ (Privacy Policy)
           </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૦૯ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 09 September 2026)
+            અમદાવાદ ડબગર સમાજ પરિચય પુસ્તિકા • Version 1.0.7 • છેલ્લે અપડેટ: ૧૭ સપ્ટેમ્બર ૨૦૨૬ (Last Updated: 17 September 2026)
           </Text>
         </Card>
 
@@ -69,20 +69,23 @@ export default function PrivacyPolicyScreen() {
             </Text>
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            સમાજ ડિરેક્ટરી અને ફેમિલી ટ્રી યોગ્ય રીતે બનાવવા માટે નીચે મુજબની માહિતી સભ્યો દ્વારા જાતે દાખલ કરવામાં આવે છે:
+            સમાજ ડિરેક્ટરી, ડિજિટલ સ્માર્ટ આઈડી કાર્ડ અને ફેમિલી ટ્રી યોગ્ય રીતે બનાવવા માટે નીચે મુજબની માહિતી સભ્યો દ્વારા જાતે દાખલ કરવામાં આવે છે:
           </Text>
           <View style={styles.bulletList}>
             <Text style={[styles.bulletItem, { color: theme.text }]}>
-              • પર્સનલ વિગતો: પૂરું નામ, જન્મ તારીખ, બ્લડ ગ્રૂપ, જન્મ સ્થળ/વતન અને પ્રોફાઇલ ફોટો.
+              • પર્સનલ વિગતો: પૂરું નામ, જન્મ તારીખ, ઉંમર, જાતિ, બ્લડ ગ્રૂપ, જન્મ સ્થળ/વતન અને પ્રોફાઇલ ફોટો.
             </Text>
             <Text style={[styles.bulletItem, { color: theme.text }]}>
-              • સંપર્ક વિગતો: મોબાઈલ નંબર, ઈમેઈલ સરનામું, ઘરનું સરનામું અને રહેઠાણનો વિસ્તાર.
+              • સંપર્ક વિગતો: મોબાઈલ નંબર, ઈમેઈલ સરનામું, ઘર/સોસાયટીનું સરનામું, રહેઠાણનો વિસ્તાર અને પીનકોડ.
             </Text>
             <Text style={[styles.bulletItem, { color: theme.text }]}>
-              • પારિવારિક સંબંધો: પરિવારના વડા સાથેનો સંબંધ, જીવનસાથી, માતા-પિતા અને સંતાનો.
+              • પારિવારિક સંબંધો: પરિવારના વડા તથા સભ્યો વચ્ચેના સીધા સંબંધો (પતિ-પત્ની, પિતા-પુત્ર, માતા-પુત્રી, પુત્રવધૂ વગેરે).
             </Text>
             <Text style={[styles.bulletItem, { color: theme.text }]}>
-              • શિક્ષણ અને વ્યવસાય: અભ્યાસ, ડિગ્રી, નોકરી કે વેપારની સંસ્થાનું નામ અને વ્યવસાય પ્રકાર.
+              • શિક્ષણ અને કારકિર્દી: અભ્યાસ કક્ષા, ડિગ્રી/કોર્સ (B.Sc. in IT, M.Sc. in IT સહિત), પાસિંગ વર્ષ અને શૈક્ષણિક સંસ્થા.
+            </Text>
+            <Text style={[styles.bulletItem, { color: theme.text }]}>
+              • વ્યવસાયની વિગત: નોકરી (ખાનગી/સરકારી), દુકાનદાર (Shop Owner), પ્રોફેશનલ, સ્વરોજગાર, વિદ્યાર્થી કે ગૃહિણીની સુવ્યવસ્થિત વિગતો.
             </Text>
           </View>
         </Card>
@@ -102,7 +105,10 @@ export default function PrivacyPolicyScreen() {
             • અમે કોઈપણ તૃતીય પક્ષ (Third Party), માર્કેટિંગ એજન્સી કે જાહેરાત કંપનીઓને આપનો ડેટા વેચતા કે ભાડે આપતા નથી.
           </Text>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • તમામ પાસવર્ડ્સ એન્ક્રિપ્ટેડ સ્વરૂપે સ્ટોર થાય છે અને રો-લેવલ સિક્યોરિટી (RLS) દ્વારા સુરક્ષિત રાખવામાં આવે છે.
+            • સભ્યોના લૉગિન સત્રને ઉપકરણ પર સુરક્ષિત રાખવા માટે એન્ડ્રોઇડ હાર્ડવેર સિક્યોરિટી (Encrypted SecureStore) નો ઉપયોગ થાય છે, જેથી ડેટા સુરક્ષિત રહે અને યુઝરને વારંવાર લૉગિન ન કરવું પડે.
+          </Text>
+          <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
+            • તમામ પાસવર્ડ્સ એન્ક્રિપ્ટેડ સ્વરૂપે સ્ટોર થાય છે અને રો-લેવલ સિક્યોરિટી (Row Level Security - RLS) દ્વારા અન્ય અનધિકૃત એક્સેસથી સુરક્ષિત રાખવામાં આવે છે.
           </Text>
         </Card>
 
@@ -111,14 +117,14 @@ export default function PrivacyPolicyScreen() {
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="people" size={20} color={theme.primary} />
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              ૪. સભ્યોના અધિકારો (User Rights & Control)
+              ૪. સભ્યોના અધિકારો અને એકાઉન્ટ ડિલીશન (User Rights & Control)
             </Text>
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • પરિવારના વડા અથવા અધિકૃત સભ્ય ગમે ત્યારે પોતાની માહિતી સુધારી (Edit) શકે છે.
+            • પરિવારના વડા અથવા અધિકૃત સભ્ય ગમે ત્યારે પોતાની તેમજ પોતાના પરિવારના સભ્યોની માહિતી સુધારી (Edit) શકે છે.
           </Text>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • જો કોઈ સભ્ય પોતાનો ડેટા કાયમ માટે હટાવવા માંગતો હોય, તો એપમાંથી ડીલીટ કરી શકે છે.
+            • જો કોઈ સભ્ય પોતાનો ડેટા કાયમ માટે હટાવવા માંગતો હોય, તો એપની પ્રોફાઇલ સ્ક્રીનમાંથી ડેન્જર ઝોન (Danger Zone) દ્વારા ડબલ કન્ફર્મેશન સાથે પોતાનું સમગ્ર પરિવાર ખાતું અને ડેટા કાયમ માટે ડિલીટ (Delete Account) કરી શકે છે.
           </Text>
         </Card>
 
@@ -131,8 +137,29 @@ export default function PrivacyPolicyScreen() {
             </Text>
           </View>
           <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
-            સમાજ સમિતિ દ્વારા જરૂરિયાત મુજબ આ ગોપનીયતા નીતિમાં સુધારો કરવાનો અધિકાર ધરાવે છે. કોઈપણ નીતિગત ફેરફાર એપ્લિકેશન તથા વેબસાઇટ મારફતે જાહેર કરવામાં આવશે.
+            શ્રી અમદાવાદ ડબગર સમાજ સમિતિ જરૂરિયાત મુજબ આ ગોપનીયતા નીતિમાં સુધારો કરવાનો અધિકાર ધરાવે છે. કોઈપણ નીતિગત ફેરફાર એપ્લિકેશન તથા અધિકૃત પોર્ટલ મારફતે જાહેર કરવામાં આવશે.
           </Text>
+        </Card>
+
+        {/* Section 6: Contact & Support */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="mail" size={20} color={theme.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              ૬. સંપર્ક અને સહાય (Contact & Support)
+            </Text>
+          </View>
+          <Text style={[styles.paragraph, { color: theme.textSecondary }]}>
+            ગોપનીયતા નીતિ, ડેટા સિક્યોરિટી અથવા એકાઉન્ટ સંબંધિત કોઈપણ પ્રશ્ન કે પૂછપરછ માટે આપ શ્રી અમદાવાદ ડબગર સમાજ કમિટી અથવા સત્તાવાર હેલ્પડેસ્કનો સંપર્ક કરી શકો છો.
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={[styles.bulletItem, { color: theme.text }]}>
+              • સંસ્થા: શ્રી અમદાવાદ ડબગર સમાજ
+            </Text>
+            <Text style={[styles.bulletItem, { color: theme.text }]}>
+              • સરનામું: અમદાવાદ, ગુજરાત
+            </Text>
+          </View>
         </Card>
 
         <View style={styles.footerNote}>

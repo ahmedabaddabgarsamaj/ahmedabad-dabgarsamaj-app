@@ -373,6 +373,25 @@ export function FamilyBookletDetailModal({
                             </Text>
                           </TouchableOpacity>
                         ) : null}
+
+                        {!m.is_deceased && (m.email || (m.occupation_details as any)?.email) ? (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              Linking.openURL(`mailto:${m.email || (m.occupation_details as any)?.email}`);
+                            }}
+                            style={styles.memberPhoneRow}
+                          >
+                            <Ionicons name="mail" size={13} color={theme.primary} />
+                            <Text style={[styles.memberPhoneText, { color: theme.primary }]}>
+                              {m.email || (m.occupation_details as any)?.email}
+                            </Text>
+                            <Text style={[styles.tapCallHint, { color: theme.textSecondary }]}>
+                              (Tap to Email)
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
                       </View>
                       <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
                     </View>
@@ -453,10 +472,10 @@ export function FamilyBookletDetailModal({
                       <View style={[styles.memberDetailsSection, { borderTopColor: theme.border }]}>
                         <View style={styles.detailRow}>
                           <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                            વ્યવસાય / Occupation:
+                            {m.occupation_type === 'STUDENT' ? 'વિદ્યાર્થી / Student:' : 'વ્યવસાય / Occupation:'}
                           </Text>
                           <Text style={[styles.detailValue, { color: theme.text }]}>
-                            💼 {occDisplay}
+                            {m.occupation_type === 'STUDENT' ? '🎓 ' : '💼 '}{occDisplay}
                           </Text>
                         </View>
 

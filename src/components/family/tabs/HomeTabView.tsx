@@ -172,6 +172,14 @@ export function HomeTabView({
                 <Text style={[styles.memberRelation, { color: theme.primary }]}>
                   {member.display_relation || member.relation}
                 </Text>
+                {(member.email || (member.occupation_details as any)?.email) ? (
+                  <View style={styles.memberEmailRow}>
+                    <Ionicons name="mail-outline" size={12} color={theme.primary} />
+                    <Text numberOfLines={1} style={[styles.memberEmailText, { color: theme.textSecondary }]}>
+                      {member.email || (member.occupation_details as any)?.email}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.badgeRow}>
                   <Badge label={member.gender} variant="neutral" size="sm" />
                   {member.is_deceased ? (
@@ -317,5 +325,16 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     marginTop: 4,
+  },
+  memberEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  memberEmailText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

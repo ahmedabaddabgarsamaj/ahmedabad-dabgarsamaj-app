@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '@/features/auth/AuthContext';
+import { useAuth, getSavedLoginCredentials } from '@/features/auth/AuthContext';
 import { useTheme } from '@/constants/theme';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -31,6 +31,14 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    getSavedLoginCredentials().then(({ identifier }) => {
+      if (identifier) {
+        setEmail((prev) => (prev ? prev : identifier));
+      }
+    });
+  }, []);
 
   const handleLogin = async () => {
     setErrorMessage('');

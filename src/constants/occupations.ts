@@ -36,17 +36,6 @@ export const OCCUPATIONS: OccupationOption[] = [
     ],
   },
   {
-    code: 'BUSINESS_OWNER',
-    label: 'Business Owner / Entrepreneur',
-    gujaratiLabel: 'વેપાર / બિઝનેસ',
-    displayLabel: 'Business Owner / વેપાર',
-    fields: [
-      { key: 'business_name', label: 'Business / Firm Name', placeholder: 'e.g. Dabgar Enterprise', required: true },
-      { key: 'business_type', label: 'Type of Business / Industry', placeholder: 'e.g. Textile / Hardware / Manufacturing' },
-      { key: 'business_location', label: 'Business Location / City', placeholder: 'e.g. Nikol, Ahmedabad' },
-    ],
-  },
-  {
     code: 'SHOP_OWNER',
     label: 'Shop Owner / Retailer',
     gujaratiLabel: 'દુકાનદાર',
@@ -152,6 +141,7 @@ export const OCCUPATIONS: OccupationOption[] = [
 
 export function getOccupationDisplay(code?: string | null): string {
   if (!code) return '';
+  if (code === 'BUSINESS_OWNER') return 'Business / વ્યવસાય';
   const found = OCCUPATIONS.find((o) => o.code === code);
   return found ? found.displayLabel : code;
 }

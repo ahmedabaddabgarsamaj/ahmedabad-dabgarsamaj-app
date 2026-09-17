@@ -358,6 +358,33 @@ export default function HeadProfileScreen() {
                 keyboardType="phone-pad"
                 maxLength={10}
               />
+
+              <View style={{ marginBottom: 14 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginBottom: 6 }}>
+                  Registered Email ID / નોંધાયેલ ઈમેઈલ (Login ID)
+                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: theme.backgroundElement,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 11,
+                    gap: 8,
+                  }}
+                >
+                  <Ionicons name="mail" size={16} color={theme.primary} />
+                  <Text style={{ fontSize: 14, color: theme.text, flex: 1, fontWeight: '500' }}>
+                    {user?.email || headMember?.email || 'ઈમેઈલ દાખલ કરેલ નથી'}
+                  </Text>
+                  {user?.email || headMember?.email ? (
+                    <Badge label="Registered" variant="success" size="sm" />
+                  ) : null}
+                </View>
+              </View>
               <Input
                 label="Date of Birth / જન્મ તારીખ (DD-MM-YYYY) *"
                 placeholder="e.g. 15-08-1985"
@@ -438,6 +465,13 @@ export default function HeadProfileScreen() {
                 <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Mobile:</Text>
                 <Text style={[styles.infoVal, { color: theme.text }]}>
                   {headMember?.mobile ? `📞 ${headMember.mobile}` : 'Not provided'}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Email ID / ઈમેઈલ:</Text>
+                <Text style={[styles.infoVal, { color: (user?.email || headMember?.email) ? theme.primary : theme.text, fontWeight: (user?.email || headMember?.email) ? '600' : 'normal' }]}>
+                  {user?.email || headMember?.email ? `✉️ ${user?.email || headMember?.email}` : 'Not registered'}
                 </Text>
               </View>
 
