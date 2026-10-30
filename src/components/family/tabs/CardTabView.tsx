@@ -13,6 +13,7 @@ import {
   Animated,
   Image,
   PanResponder,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'web' ? 84 : 40,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',

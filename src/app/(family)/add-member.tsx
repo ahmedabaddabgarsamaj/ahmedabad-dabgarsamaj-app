@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -91,6 +91,7 @@ export default function AddMemberScreen() {
 
   // State
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -178,6 +179,10 @@ export default function AddMemberScreen() {
       return;
     }
 
+    if (isSubmittingRef.current || loading) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setLoading(true);
     setErrorMessage('');
 
@@ -192,6 +197,7 @@ export default function AddMemberScreen() {
         memberName: name,
       });
       if (uploadRes.error) {
+        isSubmittingRef.current = false;
         setLoading(false);
         setErrorMessage(`Photo upload failed: ${uploadRes.error}`);
         Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
@@ -233,6 +239,7 @@ export default function AddMemberScreen() {
     });
 
     if (res.error) {
+      isSubmittingRef.current = false;
       setLoading(false);
       setErrorMessage(res.error);
       return;
@@ -253,7 +260,12 @@ export default function AddMemberScreen() {
     Alert.alert(
       'Member Added Successfully!',
       `${name} has been added to your family directory and tree.`,
-      [{ text: 'Done', onPress: () => router.replace('/(family)/home' as any) }]
+      [{
+        text: 'Done',
+        onPress: () => {
+          router.replace('/(family)/home' as any);
+        },
+      }]
     );
   };
 

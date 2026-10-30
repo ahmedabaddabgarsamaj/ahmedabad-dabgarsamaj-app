@@ -192,16 +192,27 @@ export function TopBar({
 const styles = StyleSheet.create({
   container: {
     borderBottomWidth: 1,
-    zIndex: 10,
+    zIndex: 9998,
     justifyContent: 'flex-end',
+    ...Platform.select({
+      web: {
+        position: 'sticky' as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+      },
+    }),
   },
   contentRow: {
     height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Platform.OS === 'web' ? 24 : 14,
+    paddingHorizontal: 14,
+    maxWidth: 960,
     width: '100%',
+    alignSelf: 'center',
   },
   brandHeaderSection: {
     flex: 1,
@@ -246,6 +257,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+      },
+    }),
   },
   backTitle: {
     fontSize: 17,
@@ -267,5 +285,12 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+      },
+    }),
   },
 });

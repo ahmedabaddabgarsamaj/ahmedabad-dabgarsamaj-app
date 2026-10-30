@@ -217,7 +217,7 @@ export default function FamilyTreeScreen() {
       />
 
       {/* Bottom Navigation */}
-      <BottomTabBar />
+      <BottomTabBar activeTab="tree" />
     </View>
   );
 }
@@ -226,6 +226,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
+    ...Platform.select({
+      web: {
+        paddingBottom: 76,
+      },
+    }),
   },
   centerBody: {
     flex: 1,

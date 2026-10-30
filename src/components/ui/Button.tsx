@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -104,7 +105,12 @@ export function Button({
           paddingVertical: sStyle.paddingVertical,
           paddingHorizontal: sStyle.paddingHorizontal,
           borderRadius: sStyle.borderRadius,
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? 0.5 : loading ? 0.75 : 1,
+          ...Platform.select({
+            web: {
+              cursor: disabled || loading ? 'not-allowed' : 'pointer',
+            },
+          }),
         },
         style,
       ]}
@@ -140,6 +146,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent',
+      },
+    }),
   },
   text: {
     fontWeight: '600',

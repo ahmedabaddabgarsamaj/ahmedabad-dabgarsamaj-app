@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/constants/theme';
@@ -66,7 +66,7 @@ export interface BottomTabBarProps {
 
 export function BottomTabBar({ activeTab, onSelectTab }: BottomTabBarProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -92,57 +92,88 @@ export function BottomTabBar({ activeTab, onSelectTab }: BottomTabBarProps) {
         },
       ]}
     >
-      {TABS.map((tab) => {
-        const isActive = activeTab
-          ? activeTab === tab.id
-          : pathname.includes(tab.id) ||
-            (tab.id === 'home' && (pathname === '/' || pathname === '/(family)/home'));
+      <View style={styles.innerWrapper}>
+        {TABS.map((tab) => {
+          const isActive = activeTab
+            ? activeTab === tab.id
+            : pathname.includes(tab.id) ||
+              (tab.id === 'card' && pathname.includes('family-card')) ||
+              (tab.id === 'home' && (pathname === '/' || pathname === '/(family)/home' || pathname === '/home'));
 
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            activeOpacity={0.7}
-            onPress={() => handleTabPress(tab)}
-            style={styles.tabButton}
-          >
-            <Ionicons
-              name={isActive ? tab.activeIcon : tab.icon}
-              size={22}
-              color={isActive ? theme.primary : theme.textSecondary}
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                {
-                  color: isActive ? theme.primary : theme.textSecondary,
-                  fontWeight: isActive ? '700' : '500',
-                },
-              ]}
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              activeOpacity={0.7}
+              onPress={() => handleTabPress(tab)}
+              style={styles.tabButton}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={`${tab.label} (${tab.gujaratiLabel})`}
             >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+              <Ionicons
+                name={isActive ? tab.activeIcon : tab.icon}
+                size={22}
+                color={isActive ? theme.primary : theme.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isActive ? theme.primary : theme.textSecondary,
+                    fontWeight: isActive ? '700' : '500',
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    borderTopWidth: 1,
+    paddingTop: 6,
+    ...Platform.select({
+      web: {
+        position: 'fixed' as const,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.08)',
+      },
+      default: {
+        elevation: 8,
+      },
+    }),
+  },
+  innerWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    paddingTop: 6,
-    elevation: 8,
-    boxShadow: '0px -2px 6px rgba(0, 0, 0, 0.05)',
+    maxWidth: 960,
+    width: '100%',
+    alignSelf: 'center',
   },
   tabButton: {
     flex: 1,
     maxWidth: 160,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 4,
+    minHeight: 44,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+      },
+    }),
   },
   tabLabel: {
     fontSize: 11,

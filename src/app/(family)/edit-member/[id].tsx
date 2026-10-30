@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -42,6 +42,7 @@ export default function EditMemberScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [error, setError] = useState('');
   const [family, setFamily] = useState<Family | null>(null);
   const [otherMembers, setOtherMembers] = useState<FamilyMember[]>([]);
@@ -197,6 +198,8 @@ export default function EditMemberScreen() {
 
   const handleSave = async () => {
     if (!id) return;
+    if (isSavingRef.current || saving) return;
+
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Member name is mandatory.');
       return;
@@ -218,6 +221,7 @@ export default function EditMemberScreen() {
       }
     }
 
+    isSavingRef.current = true;
     setSaving(true);
 
     let finalPhotoUrl = photoUrl;
@@ -237,6 +241,7 @@ export default function EditMemberScreen() {
         memberName: name,
       });
       if (uploadRes.error) {
+        isSavingRef.current = false;
         setSaving(false);
         Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
         return;
@@ -302,6 +307,7 @@ export default function EditMemberScreen() {
     setSaving(false);
 
     if (res.error) {
+      isSavingRef.current = false;
       Alert.alert('Save Error', res.error);
     } else {
       Alert.alert('Updated Successfully', `${name}'s complete profile has been updated.`, [

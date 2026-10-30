@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -67,6 +67,7 @@ export default function SetupFamilyScreen() {
   const [pincode, setPincode] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -179,6 +180,10 @@ export default function SetupFamilyScreen() {
       return;
     }
 
+    if (isSubmittingRef.current || loading) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setLoading(true);
 
     let finalPhotoUrl = photoUrl;
@@ -190,6 +195,7 @@ export default function SetupFamilyScreen() {
         memberName: name,
       });
       if (uploadRes.error) {
+        isSubmittingRef.current = false;
         setLoading(false);
         Alert.alert('Photo Upload Notice / ફોટો અપલોડ', uploadRes.error);
         return;
@@ -227,6 +233,7 @@ export default function SetupFamilyScreen() {
     setLoading(false);
 
     if (res.error) {
+      isSubmittingRef.current = false;
       setErrorMessage(res.error);
     } else {
       Alert.alert(

@@ -200,6 +200,159 @@ function formatResidence(resType) {
   return resType || '';
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SQL DUMP GENERATOR
+// Generates a self-contained SQL file with DELETE + INSERT statements for all
+// core tables in FK-safe order so it can be replayed against a fresh DB.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Escape a JavaScript value to a safe PostgreSQL literal.
+ * - null / undefined  → NULL
+ * - boolean           → TRUE / FALSE
+ * - number            → bare numeric literal
+ * - object / array    → JSON string cast to ::jsonb
+ * - string            → single-quoted with internal ' doubled
+ */
+function sqlLiteral(value) {
+  if (value === null || value === undefined) return 'NULL';
+  if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'object') {
+    // JSONB: stringify then escape single-quotes
+    const json = JSON.stringify(value).replace(/'/g, "''");
+    return `'${json}'::jsonb`;
+  }
+  // string
+  const escaped = String(value).replace(/'/g, "''");
+  return `'${escaped}'`;
+}
+
+/**
+ * Build a single INSERT statement for one row.
+ * @param {string} table  - unquoted table name
+ * @param {string[]} cols - column names in order
+ * @param {object}  row   - data row from Supabase
+ */
+function buildInsert(table, cols, row) {
+  const colList = cols.map(c => `"${c}"`).join(', ');
+  const valList = cols.map(c => sqlLiteral(row[c])).join(', ');
+  return `INSERT INTO public."${table}" (${colList}) VALUES (${valList});`;
+}
+
+async function generateSqlDump(supabaseClient) {
+  console.log('Generating SQL dump...');
+
+  const lines = [];
+  const now = new Date().toISOString();
+
+  lines.push('-- ============================================================');
+  lines.push('-- Ahmedabad Dabgar Samaj - Full Data SQL Dump');
+  lines.push(`-- Generated: ${now}`);
+  lines.push('-- Replay: psql -d <target_db> -f <this_file>');
+  lines.push('-- ============================================================');
+  lines.push('');
+  lines.push('BEGIN;');
+  lines.push('');
+
+  // ── Table definitions & FK-safe deletion order ──────────────────────────
+  // Delete in reverse FK order so constraints are not violated.
+  const deleteOrder = [
+    'occupation_records',
+    'education_records',
+    'family_relationships',
+    'family_members',
+    'families',
+    'profiles',
+  ];
+
+  lines.push('-- Delete existing data (reverse FK order)');
+  for (const t of deleteOrder) {
+    lines.push(`DELETE FROM public."${t}";`);
+  }
+  lines.push('');
+
+  // ── Helper to fetch all rows from a table ────────────────────────────────
+  async function fetchAll(tableName) {
+    const { data, error } = await supabaseClient.from(tableName).select('*');
+    if (error) throw new Error(`SQL dump: failed to fetch ${tableName}: ${error.message}`);
+    return data || [];
+  }
+
+  // ── 1. profiles ───────────────────────────────────────────────────────────
+  const profileCols = ['id', 'auth_user_id', 'email', 'phone', 'role', 'created_at', 'updated_at'];
+  const profiles = await fetchAll('profiles');
+  lines.push(`-- Table: profiles (${profiles.length} rows)`);
+  for (const row of profiles) lines.push(buildInsert('profiles', profileCols, row));
+  lines.push('');
+
+  // ── 2. families ───────────────────────────────────────────────────────────
+  const familyCols = [
+    'id', 'family_code', 'head_user_id', 'address', 'area_id', 'city', 'state',
+    'pincode', 'native_place', 'status', 'notes', 'verified_at', 'verified_by',
+    'created_at', 'updated_at',
+  ];
+  const families = await fetchAll('families');
+  lines.push(`-- Table: families (${families.length} rows)`);
+  for (const row of families) lines.push(buildInsert('families', familyCols, row));
+  lines.push('');
+
+  // ── 3. family_members ─────────────────────────────────────────────────────
+  const memberCols = [
+    'id', 'family_id', 'name', 'photo_url', 'gender', 'mobile', 'email',
+    'dob', 'relation', 'residence_type', 'separate_address', 'separate_area_id',
+    'separate_city', 'separate_state', 'separate_pincode', 'education_status',
+    'occupation_type', 'occupation_details', 'blood_group', 'birth_place',
+    'is_deceased', 'deceased_date', 'can_edit_family', 'status',
+    'created_at', 'updated_at',
+  ];
+  const members = await fetchAll('family_members');
+  lines.push(`-- Table: family_members (${members.length} rows)`);
+  for (const row of members) lines.push(buildInsert('family_members', memberCols, row));
+  lines.push('');
+
+  // ── 4. family_relationships ───────────────────────────────────────────────
+  const relCols = [
+    'id', 'family_id', 'from_member_id', 'to_member_id', 'relationship_type', 'created_at',
+  ];
+  const relationships = await fetchAll('family_relationships');
+  lines.push(`-- Table: family_relationships (${relationships.length} rows)`);
+  for (const row of relationships) lines.push(buildInsert('family_relationships', relCols, row));
+  lines.push('');
+
+  // ── 5. education_records ──────────────────────────────────────────────────
+  const eduCols = [
+    'id', 'family_member_id', 'education_level', 'course_or_standard',
+    'education_status', 'current_year', 'passing_year', 'institution',
+    'created_at', 'updated_at',
+  ];
+  const educations = await fetchAll('education_records');
+  lines.push(`-- Table: education_records (${educations.length} rows)`);
+  for (const row of educations) lines.push(buildInsert('education_records', eduCols, row));
+  lines.push('');
+
+  // ── 6. occupation_records ─────────────────────────────────────────────────
+  const occCols = [
+    'id', 'family_member_id', 'occupation_type', 'organization_name',
+    'designation', 'business_name', 'business_type', 'work_location',
+    'experience_years', 'details', 'created_at', 'updated_at',
+  ];
+  const occupations = await fetchAll('occupation_records');
+  lines.push(`-- Table: occupation_records (${occupations.length} rows)`);
+  for (const row of occupations) lines.push(buildInsert('occupation_records', occCols, row));
+  lines.push('');
+
+  lines.push('COMMIT;');
+  lines.push('');
+  lines.push('-- End of dump');
+
+  const totalRows = profiles.length + families.length + members.length +
+    relationships.length + educations.length + occupations.length;
+  console.log(`SQL dump ready: ${totalRows} total rows across 6 tables.`);
+
+  return lines.join('\n');
+}
+
 async function fetchFullData() {
   console.log('Fetching live data from Supabase...');
   const [famRes, memRes, eduRes, occRes, areaRes, profRes] = await Promise.all([
@@ -522,7 +675,7 @@ async function buildExcelFile() {
   };
 }
 
-async function sendEmailWithBackup(filePath, filename, familyCount, livingCount, lateCount, memberCount, smtpUser, smtpPass, recipientEmail) {
+async function sendEmailWithBackup(filePath, filename, sqlFilePath, sqlFilename, familyCount, livingCount, lateCount, memberCount, smtpUser, smtpPass, recipientEmail) {
   if (!smtpUser || !smtpPass || !recipientEmail) {
     console.log('Skipping email send: Missing SMTP credentials or recipient.');
     return false;
@@ -558,7 +711,7 @@ async function sendEmailWithBackup(filePath, filename, familyCount, livingCount,
 
         <p style="font-size: 15px; margin: 0 0 12px 0;">જય શ્રી કૃષ્ણ,</p>
         <p style="font-size: 14px; color: #334155; margin: 0 0 18px 0;">
-          અમદાવાદ ડાબગર સમાજ એપ્લિકેશનના સર્વર પરથી લેવાયેલ તાજેતરનો <b>સંપૂર્ણ ડેટાબેકઅપ</b> આ ઈમેલ સાથે એક્સેલ ફાઈલ (<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">.xlsx</code>) સ્વરૂપે સામેલ છે.
+          અમદાવાદ ડાબગર સમાજ એપ્લિકેશનના સર્વર પરથી લેવાયેલ તાજેતરનો <b>સંપૂર્ણ ડેટાબેકઅપ</b> આ ઈમેલ સાથે <b>બે ફાઈલ</b> સ્વરૂપે સામેલ છે: એક્સેલ ડિરેક્ટરી (<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">.xlsx</code>) અને SQL ડેટા ડમ્પ (<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">.sql</code>) — SQL ફાઈલ અન્ય ડેટાબેઝ પર ડેટા માઇગ્રેટ કરવા ઉપયોગી છે.
         </p>
 
         <!-- Summary Stats Card Grid / Table -->
@@ -625,6 +778,10 @@ async function sendEmailWithBackup(filePath, filename, familyCount, livingCount,
           💡 <b>નોંધ:</b> એક્સેલ ફાઈલની અંદર આપેલ <b>'ફોટો જુઓ'</b> અને <b>'કાર્ડ જુઓ'</b> લિંક્સ પર ક્લિક કરવાથી સીધા જ સંબંધિત ફોટા અને ડિજિટલ સ્માર્ટ ઓળખપત્ર ઓપન થશે.
         </div>
 
+        <div style="background: #f0fdf4; border: 1px dashed #86efac; border-radius: 6px; padding: 10px 14px; margin: 16px 0; font-size: 13px; color: #166534;">
+          🗄️ <b>SQL ડમ્પ ફાઈલ:</b> <code style="background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${sqlFilename}</code> — આ ફાઈલ PostgreSQL / Supabase ડેટાબેઝ પર <code style="background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-family: monospace;">psql -d &lt;db&gt; -f &lt;file&gt;</code> ચલાવીને ડેટા restore/migrate કરી શકાય છે.
+        </div>
+
         <div style="color: #94a3b8; font-size: 12px; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px; display: flex; justify-content: space-between;">
           <span>શ્રી અમદાવાદ ડાબગર સમાજ સત્તાવાર સિસ્ટમ</span>
           <span style="font-family: monospace;">${backupId}</span>
@@ -636,6 +793,11 @@ async function sendEmailWithBackup(filePath, filename, familyCount, livingCount,
         filename: filename,
         path: filePath,
       },
+      {
+        filename: sqlFilename,
+        path: sqlFilePath,
+        contentType: 'application/sql',
+      },
     ],
   };
 
@@ -646,12 +808,21 @@ async function sendEmailWithBackup(filePath, filename, familyCount, livingCount,
 
 async function main() {
   let tempFilePath = null;
-  let keepLocalCopy = false;
+  let tempSqlPath = null;
   try {
     const { filePath, filename, familyCount, livingCount, lateCount, memberCount } = await buildExcelFile();
     tempFilePath = filePath;
+
+    // Generate SQL dump alongside the Excel
+    const sqlContent = await generateSqlDump(supabase);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const sqlFilename = `Ahmedabad_Dabgar_Samaj_Backup_${todayStr}.sql`;
+    tempSqlPath = path.join(os.tmpdir(), sqlFilename);
+    fs.writeFileSync(tempSqlPath, sqlContent, 'utf8');
+
     console.log(`\n========================================`);
-    console.log(`Excel generated in temporary directory: ${filePath}`);
+    console.log(`Excel : ${filePath}`);
+    console.log(`SQL   : ${tempSqlPath}`);
     console.log(`Families: ${familyCount}, Living: ${livingCount}, Late: ${lateCount}, Total: ${memberCount}`);
     console.log(`========================================\n`);
 
@@ -663,13 +834,15 @@ async function main() {
     const recipient = args[2] || env.BACKUP_RECIPIENT_EMAIL || process.env.BACKUP_RECIPIENT_EMAIL || null;
 
     if (smtpUser) {
-      await sendEmailWithBackup(filePath, filename, familyCount, livingCount, lateCount, memberCount, smtpUser, smtpPass, recipient);
+      await sendEmailWithBackup(filePath, filename, tempSqlPath, sqlFilename, familyCount, livingCount, lateCount, memberCount, smtpUser, smtpPass, recipient);
     } else {
-      // Keep a local copy in project root
-      const localDestination = path.join(__dirname, '..', filename);
-      fs.copyFileSync(filePath, localDestination);
-      keepLocalCopy = true;
-      console.log(`Saved master directory Excel file to project folder:\n-> ${localDestination}\n`);
+      // Keep local copies in project root
+      const localXlsx = path.join(__dirname, '..', filename);
+      const localSql = path.join(__dirname, '..', sqlFilename);
+      fs.copyFileSync(filePath, localXlsx);
+      fs.copyFileSync(tempSqlPath, localSql);
+      console.log(`Saved Excel to project folder:\n-> ${localXlsx}`);
+      console.log(`Saved SQL dump to project folder:\n-> ${localSql}\n`);
       console.log('To also send via email, run:');
       console.log('node scripts/export-and-email-backup.js <brevo_smtp_login_username> <brevo_smtp_key> <recipient_email>');
     }
@@ -677,14 +850,17 @@ async function main() {
     console.error('Fatal backup error:', err);
     process.exit(1);
   } finally {
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
-      try {
-        fs.unlinkSync(tempFilePath);
-        console.log('Temporary cache file cleaned.');
-      } catch (cleanErr) {
-        // Ignored
+    // Clean up temp files
+    for (const tmpFile of [tempFilePath, tempSqlPath]) {
+      if (tmpFile && fs.existsSync(tmpFile)) {
+        try {
+          fs.unlinkSync(tmpFile);
+        } catch (_) {
+          // Ignored
+        }
       }
     }
+    console.log('Temporary files cleaned.');
   }
 }
 

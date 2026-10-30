@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Platform,
   StyleSheet,
   View,
 } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@/constants/theme';
 import { familyService } from '@/features/family/familyService';
 import { relationshipsService } from '@/features/tree/relationshipsService';
@@ -21,10 +23,22 @@ import { CardTabView } from '@/components/family/tabs/CardTabView';
 import { useAuth } from '@/features/auth/AuthContext';
 
 export default function FamilyMasterScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: TabId }>();
   const theme = useTheme();
   const { user, isLoading: isAuthLoading } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [activeTab, setActiveTab] = useState<TabId>(
+    params.tab && ['home', 'members', 'booklet', 'tree', 'card'].includes(params.tab)
+      ? params.tab
+      : 'home'
+  );
+
+  useEffect(() => {
+    if (params.tab && ['home', 'members', 'booklet', 'tree', 'card'].includes(params.tab) && params.tab !== activeTab) {
+      setActiveTab(params.tab);
+    }
+  }, [params.tab]);
   const [family, setFamily] = useState<Family | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [treeData, setTreeData] = useState<TreeDataStructure | null>(null);
@@ -181,5 +195,10 @@ const styles = StyleSheet.create({
     maxWidth: 960,
     width: '100%',
     alignSelf: 'center',
+    ...Platform.select({
+      web: {
+        paddingBottom: 76,
+      },
+    }),
   },
 });

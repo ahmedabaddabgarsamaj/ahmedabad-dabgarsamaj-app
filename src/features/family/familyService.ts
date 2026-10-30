@@ -120,7 +120,7 @@ export const familyService = {
           familyData = headFamily;
         }
 
-        // Step B: If user is NOT the Family Head, check if they are a family member with EDIT permissions!
+        // Step B: If user is NOT the Family Head, check if they are a family member
         if (!familyData) {
           // B1: Check by member email
           if (userEmail) {
@@ -132,11 +132,12 @@ export const familyService = {
               .or(`email.ilike.${cleanEmail},occupation_details->>email.ilike.${cleanEmail}`)
               .limit(5);
 
+            // Prefer member with edit permissions, fallback to any matching family member record
             const permittedMember = memberRecords?.find((m: any) =>
               m.can_edit_family === true ||
               m.occupation_details?.can_edit_family === true ||
               m.occupation_details?.can_edit_family === 'true'
-            );
+            ) || memberRecords?.find((m: any) => m.family_id);
 
             if (permittedMember?.family_id) {
               const { data: permittedFam } = await supabase
@@ -168,7 +169,7 @@ export const familyService = {
                 m.can_edit_family === true ||
                 m.occupation_details?.can_edit_family === true ||
                 m.occupation_details?.can_edit_family === 'true'
-              );
+              ) || phoneMemberRecords?.find((m: any) => m.family_id);
 
               if (permittedPhoneMember?.family_id) {
                 const { data: permittedFam } = await supabase

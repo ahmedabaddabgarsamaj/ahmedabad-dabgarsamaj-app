@@ -103,7 +103,11 @@ export default function RootSplashScreen() {
       const elapsed = Date.now() - startTime;
       if (elapsed >= minSplashDuration && !isLoading) {
         hasShownSessionSplash = true;
-        router.replace('/walkthrough' as any);
+        if (user) {
+          router.replace('/(family)/home' as any);
+        } else {
+          router.replace('/walkthrough' as any);
+        }
         return true;
       }
       return false;

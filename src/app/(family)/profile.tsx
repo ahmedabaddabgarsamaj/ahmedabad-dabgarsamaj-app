@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 30,
+    paddingBottom: Platform.OS === 'web' ? 84 : 30,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',

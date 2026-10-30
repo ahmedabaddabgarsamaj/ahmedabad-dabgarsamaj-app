@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   zoomToolbar: {
     position: 'absolute',
-    bottom: 24,
+    bottom: Platform.OS === 'web' ? 84 : 24,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',

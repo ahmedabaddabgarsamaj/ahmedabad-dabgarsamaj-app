@@ -3,6 +3,7 @@ import { Stack, DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 import { AuthProvider } from '@/features/auth/AuthContext';
+import '@/lib/utils/alert';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

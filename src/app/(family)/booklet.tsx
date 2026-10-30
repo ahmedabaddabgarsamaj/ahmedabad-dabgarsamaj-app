@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/constants/theme';
 import { TopBar } from '@/components/navigation/TopBar';
@@ -41,5 +41,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    ...Platform.select({
+      web: {
+        paddingBottom: 76,
+      },
+    }),
   },
 });

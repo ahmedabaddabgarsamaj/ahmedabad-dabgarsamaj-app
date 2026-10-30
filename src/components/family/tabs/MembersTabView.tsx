@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: Platform.OS === 'web' ? 84 : 24,
   },
   searchRow: {
     flexDirection: 'row',

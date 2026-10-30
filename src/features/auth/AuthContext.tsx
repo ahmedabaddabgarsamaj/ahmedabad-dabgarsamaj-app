@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { Session, User } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { AppStorage } from '@/lib/storage/appStorage';
@@ -34,29 +35,42 @@ export const SAVED_LOGIN_PASSWORD_KEY = 'cf_saved_login_password';
 
 export async function saveLoginCredentials(identifier: string, password: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(SAVED_LOGIN_IDENTIFIER_KEY, identifier.trim());
-    await SecureStore.setItemAsync(SAVED_LOGIN_PASSWORD_KEY, password);
+    await AppStorage.setItem(SAVED_LOGIN_IDENTIFIER_KEY, identifier.trim());
+    await AppStorage.setItem(SAVED_LOGIN_PASSWORD_KEY, password);
+    // Also save to SecureStore on native if supported
+    if (Platform.OS !== 'web') {
+      await SecureStore.setItemAsync(SAVED_LOGIN_IDENTIFIER_KEY, identifier.trim()).catch(() => {});
+      await SecureStore.setItemAsync(SAVED_LOGIN_PASSWORD_KEY, password).catch(() => {});
+    }
   } catch (err) {
-    console.warn('Failed to save login credentials to SecureStore:', err);
+    console.warn('Failed to save login credentials:', err);
   }
 }
 
 export async function clearLoginCredentials(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => {});
-    await SecureStore.deleteItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => {});
+    await AppStorage.removeItem(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => {});
+    await AppStorage.removeItem(SAVED_LOGIN_PASSWORD_KEY).catch(() => {});
+    if (Platform.OS !== 'web') {
+      await SecureStore.deleteItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => {});
+      await SecureStore.deleteItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => {});
+    }
   } catch (err) {
-    console.warn('Failed to clear login credentials from SecureStore:', err);
+    console.warn('Failed to clear login credentials:', err);
   }
 }
 
 export async function getSavedLoginCredentials(): Promise<{ identifier: string | null; password: string | null }> {
   try {
-    const identifier = await SecureStore.getItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => null);
-    const password = await SecureStore.getItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => null);
+    let identifier = await AppStorage.getItem(SAVED_LOGIN_IDENTIFIER_KEY);
+    let password = await AppStorage.getItem(SAVED_LOGIN_PASSWORD_KEY);
+    if ((!identifier || !password) && Platform.OS !== 'web') {
+      identifier = identifier || await SecureStore.getItemAsync(SAVED_LOGIN_IDENTIFIER_KEY).catch(() => null);
+      password = password || await SecureStore.getItemAsync(SAVED_LOGIN_PASSWORD_KEY).catch(() => null);
+    }
     return { identifier, password };
   } catch (err) {
-    console.warn('Failed to load login credentials from SecureStore:', err);
+    console.warn('Failed to load login credentials:', err);
     return { identifier: null, password: null };
   }
 }

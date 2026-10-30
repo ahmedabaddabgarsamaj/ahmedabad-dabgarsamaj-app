@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -209,7 +210,7 @@ export default function FamilyMembersListScreen() {
         )}
       </ScrollView>
 
-      <BottomTabBar />
+      <BottomTabBar activeTab="members" />
     </View>
   );
 }
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: Platform.OS === 'web' ? 84 : 24,
   },
   addMemberBtn: {
     flexDirection: 'row',

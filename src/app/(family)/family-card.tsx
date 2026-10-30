@@ -689,7 +689,7 @@ export default function FamilyCardScreen() {
       )}
 
       {/* BottomTabBar only when not opened via scanned QR code */}
-      {!targetCode ? <BottomTabBar /> : null}
+      {!targetCode ? <BottomTabBar activeTab="card" /> : null}
     </View>
   );
 }
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'web' ? 84 : 40,
     maxWidth: 920,
     width: '100%',
     alignSelf: 'center',
